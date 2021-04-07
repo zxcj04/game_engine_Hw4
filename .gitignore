@@ -3,7 +3,6 @@ obj/
 a.out
 main
 main.exe
-*.pdf
 *.zip
 *.old
 imgui.ini

@@ -1,4 +1,4 @@
-#include "WindowManagement.hpp"
+#include <WindowManagement.hpp>
 
 #define GLFW_MINOR_VERSION 6
 
@@ -116,120 +116,14 @@ bool WindowManagement::init(string window_name)
     this->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
     this->clear_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
 
-    this->clip_x = 50;
-    this->clip_y = 50;
-    this->clip_z = 50;
-    this->clip = 50;
+    this->enable_cursor = true;
 
-    this->showing_last = false;
+    BuildScene::setup_boundary(vao_boundary);
+    BuildScene::setup_player(vao_player);
 
-    this->enable_section = false;
-
-    // -----------------------------------------
-
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-    };
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
-
-
-    // -----------------------------------------
-
-    generate_combo();
+    BuildScene::setup_texture(texture_wood, "assets/wood.png");
 
     return true;
-}
-
-void WindowManagement::generate_combo()
-{
-    // generate methods combo
-    this->methods["Iso Surface"] = METHODS::ISO_SURFACE;
-
-    // generate filenames combo
-    DIR *dp;
-    dirent *dirp;
-
-    if((dp = opendir("./Data/Scalar/")) != NULL)
-    {
-        while((dirp = readdir(dp)) != NULL)
-        {
-            string temp = dirp->d_name;
-            size_t index_inf = temp.find(".inf");
-            size_t index_raw = temp.find(".raw");
-
-            if(index_inf != string::npos) this->scalar_infs.push_back(temp.substr(0, index_inf));
-            if(index_raw != string::npos) this->scalar_raws.push_back(temp.substr(0, index_raw));
-        }
-    }
-    closedir(dp);
-
-    sort(this->scalar_infs.begin(), this->scalar_infs.end());
-    sort(this->scalar_raws.begin(), this->scalar_raws.end());
-
-    // for(auto it: this->scalar_filenames)
-    // {
-    //     Volume tmp("./Data/Scalar/" + it + ".inf", "");
-    // }
-    //     cout << it << endl;
-
 }
 
 void WindowManagement::set_callback_functions()
@@ -252,7 +146,8 @@ void WindowManagement::set_callback_functions()
         static_cast<WindowManagement*>(glfwGetWindowUserPointer(w))->framebuffer_callback(w, width, height);
     };
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwSetKeyCallback(this->window, keyboardCb);
     glfwSetMouseButtonCallback(window, mouseCb);
@@ -267,36 +162,13 @@ bool WindowManagement::system_init()
 
     glEnable(GL_DEPTH_TEST);
 
-    // glShadeModel(GL_SMOOTH);
-
-    // glEnable(GL_NORMALIZE);
-
     glEnable(GL_BLEND);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
 
-    float colors[4][3] = {
-                            {0.08, 0.21, 0.17},
-                            {0.16, 0.39, 0.4},
-                            {0.25, 0.40, 0.32},
-                            {0.12, 0.31, 0.26}
-                          };
-
     light_init();
-
-    // glCullFace(GL_BACK);
-    // glEnable(GL_CULL_FACE);
-
-    static float fog_color[]={0.15, 0.20, 0.20, 0.50};
-
-    // glEnable(GL_FOG);                /*enable fog fade */
-    // glFogi(GL_FOG_MODE, GL_LINEAR);  /*fog factor=GL_LINEAR,GL_EXP,or GL_EXP2*/
-    // glFogf(GL_FOG_DENSITY, 0.15);    /*fog opacity(density)= 0.25*/
-    // glFogf(GL_FOG_START, 250.0);       /*Setup two ends for GL_LINEAR*/
-    // glFogf(GL_FOG_END, 400.0);
-    // glFogfv(GL_FOG_COLOR, fog_color);/*set the fog color */
 
     return true;
 }
@@ -312,39 +184,6 @@ bool WindowManagement::light_init()
     float  lit2_diffuse[] = {1.0, 1.0, 1.0, 1.0};
     float  lit2_ambient[] = {0.0, 0.0, 0.0, 0.0};
 
-    // glEnable(GL_LIGHTING);
-    // // glEnable(GL_COLOR_MATERIAL);
-
-    // glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-    // glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-    // glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient); /*global ambient*/
-
-    // glEnable(GL_LIGHT0);
-
-    // glLightfv(GL_LIGHT0, GL_DIFFUSE, lit_diffuse);
-    // glLightfv(GL_LIGHT0, GL_SPECULAR, lit_specular);
-
-    // glEnable(GL_LIGHT1);
-
-    // glLightfv(GL_LIGHT1, GL_DIFFUSE, lit1_diffuse);
-    // glLightfv(GL_LIGHT1, GL_SPECULAR, lit_specular);
-    // glLightfv(GL_LIGHT1, GL_AMBIENT, lit1_ambient);
-    // glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0001);
-    // glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0);
-    // glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0);
-
-    // glEnable(GL_LIGHT2);
-
-    // glLightfv(GL_LIGHT2, GL_DIFFUSE, lit2_diffuse);
-    // glLightfv(GL_LIGHT2, GL_SPECULAR, lit_specular);
-    // glLightfv(GL_LIGHT2, GL_AMBIENT, lit2_ambient);
-    // glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, lit2_cutoff);
-    // glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, lit2_exponent);
-    // glLightfv(GL_LIGHT2, GL_AMBIENT, lit2_ambient);
-    // glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 0);
-    // glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.001);
-    // glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0);
-
     return true;
 }
 
@@ -358,7 +197,10 @@ void WindowManagement::display()
 
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
 
-    render_scene();
+    render_scene(SCENE::FIRST);
+    render_scene(SCENE::ORTHO_X);
+    render_scene(SCENE::ORTHO_Y);
+    render_scene(SCENE::ORTHO_Z);
 }
 
 void WindowManagement::mainloop()
@@ -374,18 +216,6 @@ void WindowManagement::mainloop()
         ImGui::Render();
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-        {
-            // this->light_color = glm::vec3(0.5f, 0.5f, 0.5f);
-            this->clear_color = glm::vec4(0.7f, 0.7f, 0.7f, 1.0f);
-        }
-        else
-        {
-            // this->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
-            this->clear_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
-        }
-
 
         /* Swap front and back buffers */
         glfwSwapBuffers(this->window);
@@ -415,164 +245,30 @@ void WindowManagement::imgui()
 
     ImGui::Begin("Is that a bird?");
     {
-        ImGui::Text("File");
 
-        if (ImGui::BeginCombo(".inf", selected_inf.c_str()))
-        {
-            for (size_t i = 0; i < scalar_infs.size(); i++)
-            {
-                if (ImGui::Selectable(scalar_infs[i].c_str()))
-                {
-                    selected_inf = scalar_infs[i];
-                    selected_raw = scalar_infs[i];
-                    is_load = false;
-                    is_show = false;
-                }
-            }
-
-            ImGui::EndCombo();
-        }
-
-        if (ImGui::BeginCombo(".raw", selected_raw.c_str()))
-        {
-            for (size_t i = 0; i < scalar_raws.size(); i++)
-            {
-                if (ImGui::Selectable(scalar_raws[i].c_str()))
-                {
-                    selected_raw = scalar_raws[i];
-                    is_load = false;
-                    is_show = false;
-                }
-            }
-
-            ImGui::EndCombo();
-        }
-
-        ImGui::InputInt("Iso Value", &iso_value);
-
-        if (ImGui::Button("Load", ImVec2(100.0f, 30.0f)))
-        {
-            if(!this->showing_last && this->volumes.size() > 0)
-                this->volumes.pop_back();
-
-            is_load = true;
-
-            // if(this->test_volume != NULL)
-            //     delete this->test_volume;
-
-            this->volumes.push_back(Volume("./Data/Scalar/" + selected_inf + ".inf", "./Data/Scalar/" + selected_raw + ".raw", iso_value));
-
-            cout << "Load: " << this->volumes.back().vao.count << endl;
-
-            this->showing_last = false;
-        }
-
-        if(this->volumes.size() > 0)
-            ImGui::SameLine();
-
-        if (this->volumes.size() > 0 && ImGui::Button("Clear", ImVec2(100.0f, 30.0f)))
-        {
-            this->volumes.clear();
-
-            is_load = false;
-
-            cout << "Clear" << endl;
-        }
-
-        if (is_load && ImGui::Button("Show", ImVec2(100.0f, 30.0f)))
-        {
-            this->showing_last = true;
-
-            Volume tmp = this->volumes.back();
-
-            this->volumes.clear();
-
-            this->volumes.push_back(tmp);
-
-            cout << "Show" << endl;
-
-            is_load = false;
-        }
-
-        if(is_load)
-            ImGui::SameLine();
-
-        if (is_load && this->volumes.size() > 1 && ImGui::Button("Blend", ImVec2(100.0f, 30.0f)))
-        {
-            this->showing_last = true;
-
-            cout << "Blend" << endl;
-
-            is_load = false;
-        }
-
-        if(!is_load || this->volumes.size() <= 1)
-            ImGui::NewLine();
-
-        ImGui::Text("Slicing Plane");
-
-        ImGui::SliderFloat("x", &(this->clip_x), -1.0f, 1.0f);
-        ImGui::SliderFloat("y", &(this->clip_y), -1.0f, 1.0f);
-        ImGui::SliderFloat("z", &(this->clip_z), -1.0f, 1.0f);
-        ImGui::SliderFloat("clip", &(this->clip), -200.0f, 200.0f);
-        {
-            glm::vec3 tmp = glm::normalize(glm::vec3(this->clip_x, this->clip_y, this->clip_z));
-
-            this->clip_x = tmp.x;
-            this->clip_y = tmp.y;
-            this->clip_z = tmp.z;
-        }
-
-        ImGui::Checkbox("Section", &enable_section);
     }
     ImGui::End();
 }
 
 
+//-----------------------------------------
 
-void WindowManagement::render_scene()
+
+void WindowManagement::render_scene(SCENE scene)
 {
     this->shader.use();
 
     glm::mat4 projection;
 
-    if(width > height)
-    {
-        projection = glm::ortho(
-            this->camera.left                              , this->camera.right,
-            this->camera.bottom * ((float) height / width) , this->camera.top * ((float) height / width),
-            this->camera.near                              , this->camera.far
-        );
-    }
-    else
-    {
-        projection = glm::ortho(
-            this->camera.left * ((float) width /height)  , this->camera.right * ((float) width /height),
-            this->camera.bottom                          , this->camera.top,
-            this->camera.near                            , this->camera.far
-        );
-    }
+    BuildScene::set_viewport(scene, width, height);
+    BuildScene::set_projection(scene, projection, this->camera, width, height);
 
-    shader.set_uniform("clip", glm::vec4(this->clip_x, this->clip_y, this->clip_z, this->clip));
     shader.set_uniform("projection", projection);
     shader.set_uniform("light_color", light_color);
-    shader.set_uniform("enable_section", enable_section);
-    camera.use(shader);
+    camera.use(shader, scene);
 
-    glm::mat4 model = glm::mat4(1.0f);
-
-    for(int i = 0; i < this->volumes.size(); i++)
-    {
-        if(i == this->volumes.size() - 1 && !this->showing_last)
-            continue;
-
-        model = glm::translate(glm::mat4(1.0f), -glm::vec3(this->volumes[i].resolution) / 2.0f * this->volumes[i].voxelsize);
-        shader.set_uniform("model", model);
-
-        this->volumes[i].draw();
-    }
-
-    glBindVertexArray(0);
+    BuildScene::render_boundary(scene, vao_boundary, shader, texture_wood);
+    BuildScene::render_player(vao_player, shader, this->camera.position);
 }
 
 //-------------------------------------------------
@@ -594,69 +290,73 @@ void WindowManagement::keyboard_down(int key)
             this->shader.reload();
 
             break;
+
+        case GLFW_KEY_Q:
+            this->enable_cursor = !this->enable_cursor;
+
+            if(this->enable_cursor)
+            {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+                glfwGetCursorPos(window, &x, &y);
+
+                this->last_x = x;
+                this->last_y = y;
+            }
+            else
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+            break;
     }
 }
 
 void WindowManagement::check_keyboard_pressing()
 {
-    if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-        return;
-
-    if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
-    {
-        this->clip_x += 0.02;
-    }
-    if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-    {
-        this->clip_x -= 0.02;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_KP_5) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
-    {
-        this->clip_y += 0.02;
-    }
-    if (glfwGetKey(window, GLFW_KEY_KP_2) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-    {
-        this->clip_y -= 0.02;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
-    {
-        this->clip_z += 0.02;
-    }
-    if (glfwGetKey(window, GLFW_KEY_KP_3) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-    {
-        this->clip_z -= 0.02;
-    }
+    // if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+    //     return;
 
 
-    if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        this->clip++;
+        this->camera.position +=  this->camera.direction * 10.0f;
     }
-    if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        this->clip--;
+        this->camera.position += -this->camera.direction * 10.0f;
     }
 
-    glm::vec3 tmp = glm::normalize(glm::vec3(this->clip_x, this->clip_y, this->clip_z));
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    {
+        this->camera.position +=  glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f)) * 10.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    {
+        this->camera.position += -glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f)) * 10.0f;
+    }
 
-    this->clip_x = tmp.x;
-    this->clip_y = tmp.y;
-    this->clip_z = tmp.z;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    {
+        this->camera.position += -glm::vec3(0.0f, 1.0f, 0.0f) * 10.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    {
+        this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * 10.0f;
+    }
 
-    if(this->clip > 200)
-        this->clip = 200;
-    if(this->clip < -200)
-        this->clip = -200;
+    if(this->camera.position.x > 900)
+        this->camera.position.x = 900;
+    if(this->camera.position.x < -900)
+        this->camera.position.x = -900;
+
+    if(this->camera.position.y > 900)
+        this->camera.position.y = 900;
+    if(this->camera.position.y < -900)
+        this->camera.position.y = -900;
+
+    if(this->camera.position.z > 900)
+        this->camera.position.z = 900;
+    if(this->camera.position.z < -900)
+        this->camera.position.z = -900;
 }
 
 void WindowManagement::mouse_callback(GLFWwindow* window, int button, int action, int mods)
@@ -670,8 +370,8 @@ void WindowManagement::mouse_callback(GLFWwindow* window, int button, int action
 
 void WindowManagement::scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-        return;
+    // if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+    //     return;
     // cout << xoffset << " " << yoffset << endl;
 
     this->camera.zoom(yoffset);
@@ -685,10 +385,10 @@ void WindowManagement::cursor_callback(GLFWwindow * window, double x, double y)
     this->last_x = x;
     this->last_y = y;
 
-    if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-        return;
+    // if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+    //     return;
 
-    if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if(this->enable_cursor)
     {
         this->camera.update_yaw(x_offset);
         this->camera.update_pitch(y_offset);

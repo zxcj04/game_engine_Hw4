@@ -1,6 +1,9 @@
-#include "./WindowManagement.hpp"
+#pragma once
 
 #include <iostream>
+
+#include <WindowManagement.hpp>
+
 using namespace std;
 
 int main(int argc, char **argv)

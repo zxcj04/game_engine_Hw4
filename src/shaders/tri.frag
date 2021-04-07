@@ -2,61 +2,61 @@
 
 out vec4 FragColor;
 
-in vec3 gradient;
 in vec3 frag_pos;
-in float clipped;
+in vec3 normal;
+in vec3 color;
+in vec2 tex_coord;
 
 uniform vec3 view_pos;
 uniform vec3 light_pos;
 uniform vec3 light_color;
-uniform bool enable_section;
+
+uniform vec3 eye_direction;
+
+uniform sampler2D texture_wood;
 
 void main()
 {
-	if(enable_section && abs(clipped) > 0.5)
-	{
-        discard;
-    }
-    else if(!enable_section && clipped < 0.0)
-    {
-        discard;
-    }
+    vec4 texture_color = texture(texture_wood, tex_coord);
 
-	vec3 our_color = vec3(0.7, 0.5, 0.5);
+    vec3 light_pos = view_pos;
 
-	// FragColor = vec4(our_color, 1.0);
-	// FragColor = vec4(gradient, 1.0);
-	// return;
-
-    vec3 norm = normalize(gradient);
-
-	vec3 view_d = normalize(view_pos);
-
+    vec3 norm = normalize(normal);
     vec3 light_direction = normalize(light_pos - frag_pos);
-    vec3 view_direction = normalize(view_d * 250 - frag_pos);
+    vec3 view_direction = normalize(view_pos - frag_pos);
 
-    if (dot(norm, -view_direction) < 0)
-	{
-        norm = -norm;
-    }
+    // if (dot(norm, view_direction) < 0)
+	// {
+    //     norm = -norm;
+    // }
 
     vec3 reflect_direction = reflect(-light_direction, norm);
 
     float ambient_strength = 0.2;
     vec3 ambient = ambient_strength * light_color;
-    // vec3 ambient = vec3(0, 0, 0);
 
     float diff = max(dot(norm, light_direction), 0.0);
     vec3 diffuse = diff * light_color;
-    // vec3 diffuse = vec3(0, 0, 0);
 
     float specular_strength = 0.5;
-    vec3 specular = specular_strength * pow(max(dot(view_direction, reflect_direction), 0.0), 32) * light_color;
-    // vec3 specular = vec3(0, 0, 0);
+    float spec = pow(max(dot(view_direction, reflect_direction), 0.0), 32);
+    vec3 specular = specular_strength * spec * light_color;
 
-    vec3 light = clamp((ambient + diffuse + specular), vec3(0.0), vec3(1.0)) * our_color;
-    FragColor = vec4(light, 1.0);
+    float cutoff = cos(radians(5.0f));
+    float outer_cutoff = cos(radians(50.0f));
+    float epsilon = (cutoff - outer_cutoff);
 
-	// vec3 tmp = vec3(view_direction);
-	// FragColor = vec4(tmp, 1.0);
+    float theta = dot(light_direction, -eye_direction);
+    float intensity = clamp((theta - outer_cutoff) / epsilon, 0.0, 1.0);
+
+    vec3 result;
+
+    result = (ambient + diffuse * intensity + specular * intensity) * vec3(texture_color);
+
+    // if(theta > cutoff)
+    //     result = (ambient + diffuse + specular) * color;
+    // else
+    //     result = ambient * color;
+
+    FragColor = vec4(result, 1.0);
 }

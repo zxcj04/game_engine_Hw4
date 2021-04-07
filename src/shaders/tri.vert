@@ -1,26 +1,27 @@
 #version 460 core
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aGradient;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec3 aColor;
+layout (location = 3) in vec2 aTexCoord;
 
-out vec3 gradient;
 out vec3 frag_pos;
-out float clipped;
+out vec3 normal;
+out vec3 color;
+out vec2 tex_coord;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform vec4 clip;
 
 void main()
 {
 	gl_Position = projection * view * model * vec4(aPos, 1.0f);
-	// gl_Position = vec4(aPos, 1.0f);
     frag_pos = vec3(model * vec4(aPos, 1.0));
-	// frag_pos = aPos;
 
-    clipped = dot(vec4(frag_pos, 1.0), clip);
+	normal = mat3(transpose(inverse(model))) * aNormal;
 
-	// gradient = aGradient;
-    gradient = mat3(transpose(inverse(model))) * aGradient;
+	color = aColor;
+
+	tex_coord = aTexCoord;
 }

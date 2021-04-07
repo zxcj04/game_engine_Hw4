@@ -28,7 +28,7 @@ endif
 ifeq ($(OS), Windows_NT)
 	CXXFLAGS += -I./include/windows
 
-	LIBS += -L./lib/windows -lglfw3 -lopengl32 -lgdi32
+	LIBS += -L./lib/windows -lglfw3 -lopengl32 -lgdi32 -lwinmm -limm32
 
 	mkdir = if not exist $(OBJ_DIR) mkdir $(OBJ_DIR)
 
@@ -39,7 +39,7 @@ else ifeq ($(findstring Microsoft, $(shell uname -a)), Microsoft)
 	CXX = cmd.exe /C g++
 	EXE = main.exe
 
-	LIBS += -L./lib/windows -lglfw3 -lopengl32 -lgdi32
+	LIBS += -L./lib/windows -lglfw3 -lopengl32 -lgdi32 -lwinmm -limm32
 
 	mkdir = mkdir -p $(OBJ_DIR)
 

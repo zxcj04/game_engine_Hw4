@@ -1,9 +1,10 @@
 #pragma once
 
-#include "glm/glm.hpp"
-#include "glm/gtc/type_ptr.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-#include "Shader.hpp"
+#include <constants.hpp>
+#include <Shader.hpp>
 
 class Camera
 {
@@ -16,8 +17,8 @@ class Camera
 
         Camera();
 
-        void calc();
-        void use(Shader);
+        void calc(SCENE);
+        void use(Shader, SCENE);
 
         void zoom(float);
 
@@ -26,7 +27,7 @@ class Camera
 
         float left, right, top, bottom, near, far;
 
-    private:
+    // private:
         glm::vec3 direction;
 
         glm::mat4 view;

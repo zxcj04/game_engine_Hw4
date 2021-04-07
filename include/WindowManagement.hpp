@@ -8,23 +8,23 @@
 #include <random>
 #include <set>
 #include <map>
-#include <dirent.h>
 #include <algorithm>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "glm/glm.hpp"
-#include "glm/gtc/type_ptr.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 
-#include "constants.hpp"
-#include "Shader.hpp"
-#include "Camera.hpp"
-#include "Volume.hpp"
+#include <constants.hpp>
+#include <Shader.hpp>
+#include <Camera.hpp>
+#include <Volume.hpp>
+#include <BuildScene.hpp>
 
 #ifndef M_PI
 #define M_PI acos(-1)
@@ -33,11 +33,6 @@
 using namespace std;
 
 #define   TSIZE  64   /* define texture dimension */
-
-enum SCENE
-{
-    FIRST, THIRD, GOD, INFO
-};
 
 class WindowManagement
 {
@@ -70,7 +65,7 @@ class WindowManagement
 
         void imgui();
 
-        void render_scene();
+        void render_scene(SCENE);
         void display();
 
         void mainloop();
@@ -85,25 +80,21 @@ class WindowManagement
 
         float last_x, last_y;
 
-        map<string, METHODS> methods;
-        vector<string> scalar_infs, scalar_raws;
-
         /*-----Create image space for textures -----*/
         unsigned int   textName[5];
 
         Shader shader;
         Camera camera;
 
-        bool showing_last;
+        unsigned int vao_boundary;
+        unsigned int vao_player;
 
-        unsigned int VBO, VAO;
-        unsigned int VBO2, VAO2;
+        unsigned int texture_wood;
 
         glm::vec3 light_color;
-        float clip_x, clip_y, clip_z, clip;
 
         // Volume *test_volume;
         vector<Volume> volumes;
 
-        bool enable_section;
+        bool enable_cursor;
 };

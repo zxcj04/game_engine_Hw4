@@ -1,42 +1,92 @@
-#include "./Camera.hpp"
+#include <./Camera.hpp>
 
 Camera::Camera()
 {
     this->zoom_value = 30.0f;
 
-    this->yaw        = 0.0f;
+    this->position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    this->yaw        = 225.0f;
     this->pitch      = 0.0f;
 
-    this->left   =  -200 ;
-    this->right  =   200 ;
-    this->bottom =  -200 ;
-    this->top    =   200 ;
-    this->near   =  -800 ;
-    this->far    =   800 ;
+    this->left   =  -1500 ;
+    this->right  =   1500 ;
+    this->bottom =  -1500 ;
+    this->top    =   1500 ;
+    this->near   =  -1500 ;
+    this->far    =   1500 ;
 }
 
-void Camera::calc()
+void Camera::calc(SCENE scene)
 {
+    glm::vec3 position;
+    glm::vec3 direction;
+    glm::vec3 view_up;
+
     // cout << "\t" << direction.x << " " << direction.y << " " << direction.z << endl;
-    this->direction.x = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
-    this->direction.y = sin(glm::radians(this->pitch));
-    this->direction.z = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
-    this->direction = glm::normalize(this->direction);
+
+    switch(scene)
+    {
+        case SCENE::FIRST:
+
+            direction.x = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+            direction.y = sin(glm::radians(this->pitch));
+            direction.z = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+            direction = glm::normalize(direction);
+
+            this->direction = direction;
+
+            position = this->position;
+
+            view_up = glm::vec3(0, 1, 0);
+
+            break;
+
+        case SCENE::ORTHO_X:
+
+            direction = glm::vec3(1, 0, 0);
+            direction = glm::normalize(direction);
+
+            position = glm::vec3(0, 0, 0);
+
+            view_up = glm::vec3(0, 1, 0);
+
+            break;
+
+        case SCENE::ORTHO_Y:
+
+            direction = glm::vec3(0, 1, 0);
+            direction = glm::normalize(direction);
+
+            position = glm::vec3(0, 0, 0);
+
+            view_up = glm::vec3(1, 0, 0);
+
+            break;
+
+        case SCENE::ORTHO_Z:
+
+            direction = glm::vec3(0, 0, 1);
+            direction = glm::normalize(direction);
+
+            position = glm::vec3(0, 0, 0);
+
+            view_up = glm::vec3(0, 1, 0);
+
+            break;
+    }
+
     // cout << "\t" << direction.x << " " << direction.y << " " << direction.z << endl;
 
-    this->position = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - this->direction);
-
-    this->position *= zoom_value;
-
-    glm::vec3 view_right = glm::normalize(glm::cross(this->direction, glm::vec3(0.0f, 1.0f, 0.0f))); // member consider
-    glm::vec3 up = glm::normalize(glm::cross(view_right, this->direction));
+    glm::vec3 view_right = glm::normalize(glm::cross(direction, view_up)); // member consider
+    glm::vec3 up = glm::normalize(glm::cross(view_right, direction));
 
     view = glm::lookAt(position, position + direction, up);
 }
 
-void Camera::use(Shader shader)
+void Camera::use(Shader shader, SCENE scene)
 {
-    calc();
+    calc(scene);
 
     // cout << "camera: " << endl;
 
@@ -49,6 +99,7 @@ void Camera::use(Shader shader)
     shader.set_uniform("view", view);
     shader.set_uniform("view_pos", this->position);
     shader.set_uniform("light_pos", -this->position);
+    shader.set_uniform("eye_direction", this->direction);
 }
 
 void Camera::zoom(float offset)
