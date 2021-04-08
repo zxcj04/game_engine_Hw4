@@ -25,6 +25,7 @@
 #include <Camera.hpp>
 #include <Volume.hpp>
 #include <BuildScene.hpp>
+#include <BallsHandler.hpp>
 
 #ifndef M_PI
 #define M_PI acos(-1)
@@ -84,10 +85,14 @@ class WindowManagement
         unsigned int   textName[5];
 
         Shader shader;
+        Shader shader_texture;
         Camera camera;
 
         unsigned int vao_boundary;
         unsigned int vao_player;
+        unsigned int vao_view_volume;
+
+        float boundary_size;
 
         unsigned int texture_wood;
 
@@ -97,4 +102,6 @@ class WindowManagement
         vector<Volume> volumes;
 
         bool enable_cursor;
+
+        BallsHandler *balls_handler;
 };

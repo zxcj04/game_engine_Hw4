@@ -108,10 +108,13 @@ bool WindowManagement::init(string window_name)
     system_init();
 
     this->shader = Shader("./src/shaders/tri.vert", "./src/shaders/tri.frag");
+    this->shader_texture = Shader("./src/shaders/tri.vert", "./src/shaders/tri_texture.frag");
 
-    cout << this->shader.ID << endl;
+    cout << this->shader.ID << " " << this->shader_texture.ID << endl;
 
-    this->camera = Camera();
+    this->boundary_size = 2000.0f;
+
+    this->camera = Camera(boundary_size);
 
     this->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
     this->clear_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
@@ -120,8 +123,11 @@ bool WindowManagement::init(string window_name)
 
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
+    BuildScene::setup_view_volume(vao_view_volume);
 
     BuildScene::setup_texture(texture_wood, "assets/wood.png");
+
+    balls_handler = new BallsHandler();
 
     return true;
 }
@@ -211,6 +217,8 @@ void WindowManagement::mainloop()
 
         this->check_keyboard_pressing();
 
+        this->balls_handler->move_balls();
+
         imgui();
 
         ImGui::Render();
@@ -240,7 +248,7 @@ void WindowManagement::imgui()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 350), ImGuiCond_Once);
     ImGui::SetNextWindowSize(ImVec2(250, 325), ImGuiCond_Once);
 
     ImGui::Begin("Is that a bird?");
@@ -256,19 +264,29 @@ void WindowManagement::imgui()
 
 void WindowManagement::render_scene(SCENE scene)
 {
-    this->shader.use();
+    this->shader_texture.use();
 
     glm::mat4 projection;
 
     BuildScene::set_viewport(scene, width, height);
     BuildScene::set_projection(scene, projection, this->camera, width, height);
 
+    shader_texture.set_uniform("projection", projection);
+    shader_texture.set_uniform("light_color", light_color);
+    camera.use(this->shader_texture, scene);
+
+    BuildScene::render_boundary(scene, vao_boundary, this->shader_texture, texture_wood, boundary_size);
+
+    this->shader.use();
+
     shader.set_uniform("projection", projection);
     shader.set_uniform("light_color", light_color);
-    camera.use(shader, scene);
+    camera.use(this->shader, scene);
 
-    BuildScene::render_boundary(scene, vao_boundary, shader, texture_wood);
-    BuildScene::render_player(vao_player, shader, this->camera.position);
+    BuildScene::render_player(scene, vao_player, this->shader, this->camera.position);
+    BuildScene::render_view_volume(scene, vao_view_volume, this->shader, this->camera.position, this->camera.yaw, this->camera.pitch);
+
+    this->balls_handler->draw_balls(this->shader);
 }
 
 //-------------------------------------------------
@@ -288,6 +306,7 @@ void WindowManagement::keyboard_down(int key)
 
         case GLFW_KEY_R:
             this->shader.reload();
+            this->shader_texture.reload();
 
             break;
 
@@ -305,6 +324,16 @@ void WindowManagement::keyboard_down(int key)
             }
             else
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+            break;
+
+        case GLFW_KEY_G:
+            this->balls_handler->reset_balls();
+
+            break;
+
+        case GLFW_KEY_T:
+            this->balls_handler->add_ball(boundary_size);
 
             break;
     }
@@ -343,20 +372,35 @@ void WindowManagement::check_keyboard_pressing()
         this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * 10.0f;
     }
 
-    if(this->camera.position.x > 900)
-        this->camera.position.x = 900;
-    if(this->camera.position.x < -900)
-        this->camera.position.x = -900;
+    if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
+    {
+        this->boundary_size += 10;
 
-    if(this->camera.position.y > 900)
-        this->camera.position.y = 900;
-    if(this->camera.position.y < -900)
-        this->camera.position.y = -900;
+        this->camera.update_boundary_size(this->boundary_size);
+    }
+    if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
+    {
+        this->boundary_size -= 10;
 
-    if(this->camera.position.z > 900)
-        this->camera.position.z = 900;
-    if(this->camera.position.z < -900)
-        this->camera.position.z = -900;
+        this->camera.update_boundary_size(this->boundary_size);
+    }
+
+    if(this->camera.position.x > boundary_size/2 - 5)
+        this->camera.position.x = boundary_size/2 - 5;
+    if(this->camera.position.x < -(boundary_size/2 - 5))
+        this->camera.position.x = -(boundary_size/2 - 5);
+
+    if(this->camera.position.y > boundary_size/2 - 5)
+        this->camera.position.y = boundary_size/2 - 5;
+    if(this->camera.position.y < -(boundary_size/2 - 5))
+        this->camera.position.y = -(boundary_size/2 - 5);
+
+    if(this->camera.position.z > boundary_size/2 - 5)
+        this->camera.position.z = boundary_size/2 - 5;
+    if(this->camera.position.z < -(boundary_size/2 - 5))
+        this->camera.position.z = -(boundary_size/2 - 5);
 }
 
 void WindowManagement::mouse_callback(GLFWwindow* window, int button, int action, int mods)

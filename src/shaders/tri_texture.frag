@@ -13,8 +13,12 @@ uniform vec3 light_color;
 
 uniform vec3 eye_direction;
 
+uniform sampler2D using_texture;
+
 void main()
 {
+    vec4 texture_color = texture(using_texture, tex_coord);
+
     vec3 light_pos = view_pos;
 
     vec3 norm = normalize(normal);
@@ -47,12 +51,12 @@ void main()
 
     vec3 result;
 
-    result = (ambient + diffuse * intensity + specular * intensity) * color;
+    result = (ambient + diffuse * intensity + specular * intensity) * vec3(texture_color);
 
     // if(theta > cutoff)
     //     result = (ambient + diffuse + specular) * color;
     // else
     //     result = ambient * color;
 
-    FragColor = vec4(result, 0.2);
+    FragColor = vec4(result, 1.0);
 }

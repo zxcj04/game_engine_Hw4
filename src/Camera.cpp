@@ -17,6 +17,42 @@ Camera::Camera()
     this->far    =   1500 ;
 }
 
+Camera::Camera(float boundary_size)
+{
+    this->zoom_value = 30.0f;
+
+    this->position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    this->yaw        = 225.0f;
+    this->pitch      = 0.0f;
+
+    this->left   =  -(boundary_size * 3/4) ;
+    this->right  =   (boundary_size * 3/4) ;
+    this->bottom =  -(boundary_size * 3/4) ;
+    this->top    =   (boundary_size * 3/4) ;
+    this->near   =  -(boundary_size * 3/4) ;
+    this->far    =   (boundary_size * 3/4) ;
+}
+
+void Camera::update_boundary_size(float boundary_size)
+{
+    this->left   =  -(boundary_size * 3/4) ;
+    this->right  =   (boundary_size * 3/4) ;
+    this->bottom =  -(boundary_size * 3/4) ;
+    this->top    =   (boundary_size * 3/4) ;
+    this->near   =  -(boundary_size * 3/4) ;
+    this->far    =   (boundary_size * 3/4) ;
+
+    float ratio = 30.0f;
+
+    ratio /= zoom_value;
+
+    this->left /= ratio;
+    this->right /= ratio;
+    this->bottom /= ratio;
+    this->top /= ratio;
+}
+
 void Camera::calc(SCENE scene)
 {
     glm::vec3 position;
@@ -55,7 +91,7 @@ void Camera::calc(SCENE scene)
 
         case SCENE::ORTHO_Y:
 
-            direction = glm::vec3(0, 1, 0);
+            direction = glm::vec3(0, -1, 0);
             direction = glm::normalize(direction);
 
             position = glm::vec3(0, 0, 0);

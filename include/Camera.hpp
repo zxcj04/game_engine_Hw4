@@ -16,6 +16,7 @@ class Camera
         float pitch;
 
         Camera();
+        Camera(float);
 
         void calc(SCENE);
         void use(Shader, SCENE);
@@ -24,6 +25,8 @@ class Camera
 
         void update_yaw(float);
         void update_pitch(float);
+
+        void update_boundary_size(float boundary_size);
 
         float left, right, top, bottom, near, far;
 
