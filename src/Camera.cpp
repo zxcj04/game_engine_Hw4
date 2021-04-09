@@ -65,7 +65,7 @@ void Camera::calc(SCENE scene)
     {
         case SCENE::FIRST:
 
-            direction.x = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+            direction.x = -sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
             direction.y = sin(glm::radians(this->pitch));
             direction.z = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
             direction = glm::normalize(direction);
@@ -161,7 +161,7 @@ void Camera::update_yaw(float offset)
 {
     static float sensitivity = 0.2f;
 
-    yaw -= offset * sensitivity;
+    yaw += offset * sensitivity;
 
     if(yaw > 360.0f)
         yaw -=  360.0f;
@@ -173,7 +173,7 @@ void Camera::update_pitch(float offset)
 {
     static float sensitivity = 0.1f;
 
-    pitch -= offset * sensitivity;
+    pitch += offset * sensitivity;
 
     if(pitch > 89.0f)
         pitch = 89.0f;

@@ -33,13 +33,13 @@ void BuildScene::set_viewport(SCENE scene, int width, int height)
     }
 }
 
-void BuildScene::set_projection(SCENE scene, glm::mat4 &projection, Camera camera, int width, int height)
+void BuildScene::set_projection(SCENE scene, glm::mat4 &projection, Camera camera, int width, int height, float near, float far)
 {
     switch(scene)
     {
         case SCENE::FIRST:
 
-            projection = glm::perspective(glm::radians(90.0f), (float)width / height, 0.2f, 4000.0f);
+            projection = glm::perspective(glm::radians(90.0f), (float)width / height * 3 / 4, near, far);
 
             break;
 
@@ -318,9 +318,10 @@ void BuildScene::setup_ball(unsigned int &vao_player, int &size)
             tmp_vertices.push_back(nz);
 
             // color
-            tmp_vertices.push_back(0.5f);
-            tmp_vertices.push_back(0.0f);
-            tmp_vertices.push_back(0.0f);
+            tmp_vertices.push_back(1.0f);
+            tmp_vertices.push_back(1.0f);
+            tmp_vertices.push_back(1.0f);
+            tmp_vertices.push_back(1.0f);
 
             // vertex tex coord (s, t) range between [0, 1]
             s = (float)j / sector_count;
@@ -360,8 +361,8 @@ void BuildScene::setup_ball(unsigned int &vao_player, int &size)
     }
 
     for(auto i: indices)
-        for(int j = 0; j < 11; ++j)
-            vertices.push_back(tmp_vertices[i*11 + j]);
+        for(int j = 0; j < 12; ++j)
+            vertices.push_back(tmp_vertices[i*12 + j]);
 
     unsigned int VBO;
 
@@ -374,16 +375,16 @@ void BuildScene::setup_ball(unsigned int &vao_player, int &size)
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    // normal attribute
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(6 * sizeof(float)));
+    // color attribute
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
     // texture coord attribute
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(9 * sizeof(float)));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 12 * sizeof(float), (void*)(10 * sizeof(float)));
     glEnableVertexAttribArray(3);
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -393,50 +394,68 @@ void BuildScene::setup_ball(unsigned int &vao_player, int &size)
     size = vertices.size() / 3;
 }
 
-void BuildScene::render_ball(Shader shader, unsigned int vao_ball, glm::vec3 position, float ball_radius, int size)
+void BuildScene::render_ball(Shader shader, unsigned int vao_ball, glm::vec3 position, float ball_radius, int size, CULLING culling)
 {
     glm::mat4 model = glm::mat4(1.0f);
 
     model = glm::mat4(1.0f);
 
     model = glm::translate(model, position);
-    model = glm::scale(model, glm::vec3(50.0f * ball_radius, 50.0f * ball_radius, 50.0f * ball_radius));
+    model = glm::scale(model, glm::vec3(ball_radius, ball_radius, ball_radius));
 
     shader.set_uniform("model", model);
+
+    switch(culling)
+    {
+        case CULLING::INSIDE:
+            shader.set_uniform("culling", 0);
+
+            break;
+        case CULLING::INTERSECT:
+            shader.set_uniform("culling", 1);
+
+            break;
+        case CULLING::OUTSIDE:
+            shader.set_uniform("culling", 2);
+
+            break;
+    }
 
     glBindVertexArray(vao_ball);
 
     glDrawArrays(GL_TRIANGLES, 0, size);
+
+    shader.set_uniform("culling", -1);
     glBindVertexArray(0);
 }
 
 void BuildScene::setup_view_volume(unsigned int &vao_view_volume)
 {
     float vertices[] = {
-        // positions
-         0,  0,  0,
-        -1,  1,  1,
-         1,  1,  1,
+        // positions    // color
+         0,  0,  0,     1.0, 0.0, 0.0, 1.0,
+        -1,  1,  1,     1.0, 0.0, 0.0, 1.0,
+         1,  1,  1,     1.0, 0.0, 0.0, 1.0,
 
-         0,  0,  0,
-         1,  1,  1,
-         1, -1,  1,
+         0,  0,  0,     1.0, 0.0, 0.0, 1.0,
+         1,  1,  1,     1.0, 0.0, 0.0, 1.0,
+         1, -1,  1,     1.0, 0.0, 0.0, 1.0,
 
-         0,  0,  0,
-         1, -1,  1,
-        -1, -1,  1,
+         0,  0,  0,     1.0, 0.0, 0.0, 1.0,
+         1, -1,  1,     1.0, 0.0, 0.0, 1.0,
+        -1, -1,  1,     1.0, 0.0, 0.0, 1.0,
 
-         0,  0,  0,
-        -1, -1,  1,
-        -1,  1,  1,
+         0,  0,  0,     1.0, 0.0, 0.0, 1.0,
+        -1, -1,  1,     1.0, 0.0, 0.0, 1.0,
+        -1,  1,  1,     1.0, 0.0, 0.0, 1.0,
 
-        -1,  1,  1,
-         1, -1,  1,
-         1,  1,  1,
+        -1,  1,  1,     1.0, 0.0, 0.0, 1.0,
+         1, -1,  1,     1.0, 0.0, 0.0, 1.0,
+         1,  1,  1,     1.0, 0.0, 0.0, 1.0,
 
-        -1,  1,  1,
-        -1, -1,  1,
-         1, -1,  1,
+        -1,  1,  1,     1.0, 0.0, 0.0, 1.0,
+        -1, -1,  1,     1.0, 0.0, 0.0, 1.0,
+         1, -1,  1,     1.0, 0.0, 0.0, 1.0,
     };
 
     unsigned int VBO;
@@ -450,27 +469,28 @@ void BuildScene::setup_view_volume(unsigned int &vao_view_volume)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
 }
 
-void BuildScene::render_view_volume(SCENE scene, unsigned int vao_view_volume, Shader shader, glm::vec3 position, float yaw, float pitch)
+void BuildScene::render_view_volume(SCENE scene, unsigned int vao_view_volume, Shader shader, glm::vec3 position, float yaw, float pitch, float near, float far)
 {
     if(scene == SCENE::FIRST)
         return;
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    model = glm::mat4(1.0f);
-
     model = glm::translate(model, position);
-    model = glm::rotate(model, glm::radians(yaw), glm::vec3(0, 1, 0));
+    model = glm::rotate(model, -glm::radians(yaw), glm::vec3(0, 1, 0));
     model = glm::rotate(model, -glm::radians(pitch), glm::vec3(1, 0, 0));
-    model = glm::scale(model, glm::vec3(4000.0f, 4000.0f, 4000.0f));
+    model = glm::scale(model, glm::vec3(far, far, far));
 
     shader.set_uniform("model", model);
 

@@ -51,6 +51,9 @@ bool WindowManagement::init(string window_name)
     this->last_x = width/2;
     this->last_y = height/2;
 
+    this->near_distance = 0.2f;
+    this->far_distance = 4000.0f;
+
     this->window = glfwCreateWindow(width, height, window_name.c_str(), NULL, NULL);
 
     GLFWmonitor* primary = glfwGetPrimaryMonitor();
@@ -108,7 +111,7 @@ bool WindowManagement::init(string window_name)
     system_init();
 
     this->shader = Shader("./src/shaders/tri.vert", "./src/shaders/tri.frag");
-    this->shader_texture = Shader("./src/shaders/tri.vert", "./src/shaders/tri_texture.frag");
+    this->shader_texture = Shader("./src/shaders/tri_texture.vert", "./src/shaders/tri_texture.frag");
 
     cout << this->shader.ID << " " << this->shader_texture.ID << endl;
 
@@ -120,6 +123,8 @@ bool WindowManagement::init(string window_name)
     this->clear_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
 
     this->enable_cursor = true;
+
+    this->cool = true;
 
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
@@ -217,7 +222,7 @@ void WindowManagement::mainloop()
 
         this->check_keyboard_pressing();
 
-        this->balls_handler->move_balls();
+        this->balls_handler->move_balls(cool);
 
         imgui();
 
@@ -269,7 +274,7 @@ void WindowManagement::render_scene(SCENE scene)
     glm::mat4 projection;
 
     BuildScene::set_viewport(scene, width, height);
-    BuildScene::set_projection(scene, projection, this->camera, width, height);
+    BuildScene::set_projection(scene, projection, this->camera, width, height, this->near_distance, this->far_distance);
 
     shader_texture.set_uniform("projection", projection);
     shader_texture.set_uniform("light_color", light_color);
@@ -281,12 +286,19 @@ void WindowManagement::render_scene(SCENE scene)
 
     shader.set_uniform("projection", projection);
     shader.set_uniform("light_color", light_color);
+    shader.set_uniform("enable_light", true);
     camera.use(this->shader, scene);
 
     BuildScene::render_player(scene, vao_player, this->shader, this->camera.position);
-    BuildScene::render_view_volume(scene, vao_view_volume, this->shader, this->camera.position, this->camera.yaw, this->camera.pitch);
 
-    this->balls_handler->draw_balls(this->shader);
+    this->balls_handler->draw_balls(this->shader
+                                  , this->camera.position, this->camera.yaw, this->camera.pitch
+                                  , this->near_distance, this->far_distance);
+
+    shader.set_uniform("enable_light", false);
+    BuildScene::render_view_volume(scene, vao_view_volume, this->shader
+                                 , this->camera.position, this->camera.yaw, this->camera.pitch
+                                 , this->near_distance, this->far_distance);
 }
 
 //-------------------------------------------------
@@ -298,6 +310,8 @@ void WindowManagement::keyboard_down(int key)
     // cout << (char) tolower(key) << endl;
 
     static double x, y;
+
+    ImGuiIO& io = ImGui::GetIO();
 
     switch(key)
     {
@@ -321,9 +335,17 @@ void WindowManagement::keyboard_down(int key)
 
                 this->last_x = x;
                 this->last_y = y;
+
+
+                io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+                ImGui::SetMouseCursor(ImGuiMouseCursor_None);
             }
             else
+            {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+                io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+            }
 
             break;
 
@@ -347,29 +369,29 @@ void WindowManagement::check_keyboard_pressing()
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        this->camera.position +=  this->camera.direction * 10.0f;
+        this->camera.position +=  glm::normalize(this->camera.direction) * 20.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        this->camera.position += -this->camera.direction * 10.0f;
+        this->camera.position += -glm::normalize(this->camera.direction) * 20.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        this->camera.position +=  glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f)) * 10.0f;
+        this->camera.position +=  glm::normalize(glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f))) * 20.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        this->camera.position += -glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f)) * 10.0f;
+        this->camera.position += -glm::normalize(glm::cross(this->camera.direction, glm::vec3(0.0f, 1.0f, 0.0f))) * 20.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
-        this->camera.position += -glm::vec3(0.0f, 1.0f, 0.0f) * 10.0f;
+        this->camera.position += -glm::vec3(0.0f, 1.0f, 0.0f) * 20.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-        this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * 10.0f;
+        this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * 20.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
@@ -385,6 +407,11 @@ void WindowManagement::check_keyboard_pressing()
         this->boundary_size -= 10;
 
         this->camera.update_boundary_size(this->boundary_size);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+    {
+        this->balls_handler->add_ball(boundary_size);
     }
 
     if(this->camera.position.x > boundary_size/2 - 5)
@@ -435,7 +462,7 @@ void WindowManagement::cursor_callback(GLFWwindow * window, double x, double y)
     if(this->enable_cursor)
     {
         this->camera.update_yaw(x_offset);
-        this->camera.update_pitch(y_offset);
+        this->camera.update_pitch(-y_offset);
     }
 }
 

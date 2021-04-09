@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
     WindowManagement* window_management = new WindowManagement();
 
-    bool err = !window_management -> init("ROV");
+    bool err = !window_management -> init("Cull & Collision");
 
     if(err)
     {

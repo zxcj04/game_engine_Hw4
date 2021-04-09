@@ -18,8 +18,8 @@ class BallsHandler
         void add_ball(float);
         void add_ball(float, float, float, float, float);
 
-        void draw_balls(Shader);
-        void move_balls();
+        void draw_balls(Shader, glm::vec3, float, float, float, float);
+        void move_balls(bool);
 
         void reset_balls();
 

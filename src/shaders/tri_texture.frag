@@ -25,10 +25,10 @@ void main()
     vec3 light_direction = normalize(light_pos - frag_pos);
     vec3 view_direction = normalize(view_pos - frag_pos);
 
-    if (dot(norm, view_direction) < 0)
-	{
-        norm = -norm;
-    }
+    // if (dot(norm, view_direction) < 0)
+	// {
+    //     norm = -norm;
+    // }
 
     vec3 reflect_direction = reflect(-light_direction, norm);
 

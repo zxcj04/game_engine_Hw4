@@ -79,6 +79,9 @@ class WindowManagement
 
         glm::vec4 clear_color;
 
+        float near_distance;
+        float far_distance;
+
         float last_x, last_y;
 
         /*-----Create image space for textures -----*/
@@ -98,10 +101,9 @@ class WindowManagement
 
         glm::vec3 light_color;
 
-        // Volume *test_volume;
-        vector<Volume> volumes;
-
         bool enable_cursor;
+
+        bool cool;
 
         BallsHandler *balls_handler;
 };

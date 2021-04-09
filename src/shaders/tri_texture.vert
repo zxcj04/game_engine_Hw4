@@ -2,12 +2,12 @@
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec4 aColor;
+layout (location = 2) in vec3 aColor;
 layout (location = 3) in vec2 aTexCoord;
 
 out vec3 frag_pos;
 out vec3 normal;
-out vec4 color;
+out vec3 color;
 out vec2 tex_coord;
 
 uniform mat4 model;
