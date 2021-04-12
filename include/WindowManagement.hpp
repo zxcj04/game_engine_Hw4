@@ -103,7 +103,11 @@ class WindowManagement
 
         bool enable_cursor;
 
+        float decay;
+
         bool cool;
+
+        bool spatial_partition;
 
         BallsHandler *balls_handler;
 };

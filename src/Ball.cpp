@@ -2,18 +2,20 @@
 
 int Ball::count = 0;
 
-Ball::Ball(float x, float y, float z, float radius)
+Ball::Ball(glm::vec3 position, float radius, glm::vec3 speed)
 {
-    position = glm::vec3(x, y, z);
+    this->position = position;
 
     BuildScene::setup_ball(vao, size);
 
     this->radius = radius;
 
-    this->speed = glm::vec3(0, -10, 0);
+    this->speed = speed;
     this->acceleration = glm::vec3(0, -3, 0);
 
-    this->number = ++Ball::count;
+    this->number = Ball::count++;
+
+    this->grid_position = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 Ball::~Ball()
@@ -21,7 +23,7 @@ Ball::~Ball()
 
 }
 
-bool Ball::check_boundary_collision(vector<glm::vec3> &callis)
+bool Ball::check_boundary_collision(vector<glm::vec3> &callis, float decay)
 {
     bool ret = false;
 
@@ -78,26 +80,26 @@ bool Ball::check_boundary_collision(vector<glm::vec3> &callis)
 
         if(collide)
         {
-            float m1 = this->radius * this->radius * this->radius;
-            float m2 = numeric_limits<float>::max();
-
-            glm::vec3 ratio = ((m1 - m2) / (m1 + m2)) * this->speed;
-
-            this->speed = glm::normalize(glm::reflect(this->speed, boundary_normal[i])) * glm::length(ratio) * 0.8f;
-
             // float m1 = this->radius * this->radius * this->radius;
             // float m2 = numeric_limits<float>::max();
 
-            // glm::vec3 to_wall = -boundary_normal[i];
+            // glm::vec3 ratio = ((m1 - m2) / (m1 + m2)) * this->speed;
 
-            // glm::vec3 v1_c = glm::normalize(to_wall) * glm::dot(this->speed, glm::normalize(to_wall));
-            // glm::vec3 v2_c = glm::vec3(0.0f, 0.0f, 0.0f);
+            // this->speed = glm::normalize(glm::reflect(this->speed, boundary_normal[i])) * glm::length(ratio) * decay;
 
-            // glm::vec3 v1_u = this->speed - v1_c;
+            float m1 = this->radius * this->radius * this->radius;
+            float m2 = numeric_limits<float>::max();
 
-            // glm::vec3 calli_speed = ((m1 - m2) / (m1 + m2)) * v1_c + ((2 * m1) / (m1 + m2)) * v2_c;
+            glm::vec3 to_wall = -boundary_normal[i];
 
-            // this->speed = v1_u + calli_speed;
+            glm::vec3 v1_c = glm::normalize(to_wall) * glm::dot(this->speed, glm::normalize(to_wall));
+            glm::vec3 v2_c = glm::vec3(0.0f, 0.0f, 0.0f);
+
+            glm::vec3 v1_u = this->speed - v1_c;
+
+            glm::vec3 calli_speed = ((m1 - m2) / (m1 + m2)) * v1_c + ((2 * m1) / (m1 + m2)) * v2_c;
+
+            this->speed = v1_u + calli_speed * decay;
 
             // float m1 = this->radius * this->radius * this->radius;
             // float m2 = numeric_limits<float>::max();
@@ -119,7 +121,7 @@ bool Ball::check_boundary_collision(vector<glm::vec3> &callis)
     return ret;
 }
 
-bool Ball::check_ball_collision(Ball &ball)
+bool Ball::check_ball_collision(Ball &ball, float decay)
 {
     bool ret = false;
 
@@ -139,8 +141,8 @@ bool Ball::check_ball_collision(Ball &ball)
         // this->callis.push_back();
         // ball.callis.push_back();
 
-        this->speed = this->speed - v1 + (v1 * (m1 - m2) + 2 * m2 * v2) / (m1 + m2) * 0.8f;
-        ball.speed  = ball.speed  - v2 + (v2 * (m2 - m1) + 2 * m1 * v1) / (m1 + m2) * 0.8f;
+        this->speed = this->speed - v1 + (v1 * (m1 - m2) + 2 * m2 * v2) / (m1 + m2) * decay;
+        ball.speed  = ball.speed  - v2 + (v2 * (m2 - m1) + 2 * m1 * v1) / (m1 + m2) * decay;
 
         ret = true;
     }
@@ -148,9 +150,9 @@ bool Ball::check_ball_collision(Ball &ball)
     return ret;
 }
 
-void Ball::move(vector<Ball> &balls, bool cool)
+void Ball::move(vector<Ball> &balls, bool cool, float decay)
 {
-    bool boundary_collide = check_boundary_collision(callis);
+    bool boundary_collide = check_boundary_collision(callis, decay);
     // bool ball_collide = check_ball_collision(balls, callis);
 
     // if(boundary_collide || ball_collide)
@@ -264,4 +266,24 @@ void Ball::draw(Shader shader, glm::vec3 player_position, float yaw, float pitch
     }
 
     BuildScene::render_ball(shader, vao, position, radius, size, culling);
+}
+
+void Ball::update_regular_grid(vector<vector<vector<set<int>>>> &regular_grid, int gap)
+{
+    glm::ivec3 now_grid = glm::ivec3((position + 1000.0f) / (float)gap + 1.0f);
+
+    if(now_grid.x < 0 || now_grid.x > 2000 / gap + 1 ||
+       now_grid.y < 0 || now_grid.y > 2000 / gap + 1 ||
+       now_grid.z < 0 || now_grid.z > 2000 / gap + 1
+    )
+        return;
+
+    if(grid_position != now_grid)
+    {
+        regular_grid[grid_position.x][grid_position.y][grid_position.z].erase(this->number);
+
+        grid_position = now_grid;
+
+        regular_grid[grid_position.x][grid_position.y][grid_position.z].insert(this->number);
+    }
 }

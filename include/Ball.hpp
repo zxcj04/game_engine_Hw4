@@ -3,6 +3,8 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <vector>
+#include <set>
 
 #include <glm/glm.hpp>
 
@@ -15,14 +17,16 @@ using namespace std;
 class Ball
 {
     public:
-        Ball(float, float, float, float);
+        Ball(glm::vec3, float, glm::vec3);
         ~Ball();
 
         void draw(Shader, glm::vec3, float, float, float, float);
-        void move(vector<Ball>&, bool);
+        void move(vector<Ball>&, bool, float);
 
-        bool check_boundary_collision(vector<glm::vec3>&);
-        bool check_ball_collision(Ball &);
+        bool check_boundary_collision(vector<glm::vec3>&, float);
+        bool check_ball_collision(Ball &, float);
+
+        void update_regular_grid(vector<vector<vector<set<int>>>> &regular_grid, int);
 
         static int count;
 
@@ -31,6 +35,8 @@ class Ball
         glm::vec3 position;
         glm::vec3 speed;
         glm::vec3 acceleration;
+
+        glm::ivec3 grid_position;
 
         int number;
 

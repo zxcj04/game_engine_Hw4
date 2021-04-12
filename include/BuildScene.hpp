@@ -10,6 +10,10 @@
 #include <Camera.hpp>
 #include <Shader.hpp>
 
+#ifndef M_PI
+#define M_PI acos(-1)
+#endif
+
 using namespace std;
 
 class BuildScene

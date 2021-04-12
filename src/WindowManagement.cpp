@@ -108,6 +108,10 @@ bool WindowManagement::init(string window_name)
     ImGui_ImplGlfw_InitForOpenGL(this->window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
 
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+
     system_init();
 
     this->shader = Shader("./src/shaders/tri.vert", "./src/shaders/tri.frag");
@@ -124,7 +128,11 @@ bool WindowManagement::init(string window_name)
 
     this->enable_cursor = true;
 
-    this->cool = true;
+    this->decay = 1.0f;
+
+    this->cool = false;
+
+    this->spatial_partition = true;
 
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
@@ -222,7 +230,7 @@ void WindowManagement::mainloop()
 
         this->check_keyboard_pressing();
 
-        this->balls_handler->move_balls(cool);
+        this->balls_handler->move_balls(cool, decay, spatial_partition);
 
         imgui();
 
@@ -242,23 +250,78 @@ void WindowManagement::mainloop()
 
 void WindowManagement::imgui()
 {
-    // cout << clip << endl;
-    static bool is_load = false;
-    static bool is_show = false;
-    static string selected_inf = "engine";
-    static string selected_raw = "engine";
-    static int iso_value = 80;
+    static glm::vec3 ball_position;
+    static float ball_radius = 150.0f;
+    // static glm::vec3 ball_speed = glm::vec3(0.0f, -10.0f, 0.0f);
+    static vector<float> ball_speed = {0.0f, -10.0f, 0.0f};
+    static bool overflow_decay = false;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 350), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(250, 325), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 475), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(250, 450), ImGuiCond_Once);
 
     ImGui::Begin("Is that a bird?");
     {
+        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+        ImGui::Text("Clipping");
+
+        // ImGui::SliderFloat("Far", &far_distance, near_distance, 5000.0f, "%.1f");
+        ImGui::InputFloat("-Far-",  &far_distance, 1.0f, 100.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
+        // ImGui::SliderFloat("Near", &near_distance, 0.1f, far_distance  , "%.1f");
+        ImGui::InputFloat("-Near-", &near_distance, 1.0f, 100.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
+
+        ImGui::Text("----------------------------");
+
+        ImGui::Text("Game Setting");
+
+        if(overflow_decay)
+            ImGui::SliderFloat("Decay", &decay, 0.1f, 2.0f, "%.1f");
+        else
+        {
+            if(decay > 1.0f)
+                decay = 1.0f;
+
+            ImGui::SliderFloat("Decay", &decay, 0.1f, 1.0f, "%.1f");
+        }
+
+        ImGui::Checkbox("Spatial Partition", &spatial_partition);
+        ImGui::Checkbox("Gravity (beta)", &cool);
+        ImGui::Checkbox("Decay Overflow (danger)", &overflow_decay);
+
+        ImGui::Text("----------------------------");
+
+        ImGui::Text("Generate Ball");
+
+        if(ImGui::Button("Random Generate", ImVec2(200, 25)))
+        {
+            this->balls_handler->add_ball(boundary_size);
+        }
+
+        ImGui::Text("----------------------------");
+
+        // void BallsHandler::add_ball(float boundary_size, glm::vec3 position, float radius, glm::vec3 speed)
+
+        ImGui::InputFloat("radius", &ball_radius, 1.0f, 50.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
+
+        ImGui::InputFloat3("init speed", ball_speed.data(), "%.1f");
+
+        if(ImGui::Button("Generate at now position", ImVec2(200, 25)))
+        {
+            ball_position = this->camera.position;
+
+            this->balls_handler->add_ball(boundary_size, ball_position, ball_radius, glm::vec3(ball_speed[0], ball_speed[1], ball_speed[2]));
+        }
+
+        ImGui::Text("----------------------------");
+
+        if(ImGui::Button("Clear \"ALL\" Balls", ImVec2(200, 25)))
+        {
+            this->balls_handler->reset_balls();
+        }
     }
     ImGui::End();
 }
@@ -365,7 +428,7 @@ void WindowManagement::check_keyboard_pressing()
 {
     // if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
     //     return;
-
+    static float cooldown = 1.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
@@ -414,6 +477,16 @@ void WindowManagement::check_keyboard_pressing()
         this->balls_handler->add_ball(boundary_size);
     }
 
+    if (enable_cursor && cooldown >= 1.0f && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    {
+        this->balls_handler->add_ball(boundary_size, this->camera.position + this->camera.direction * 5.0f, 15.0f, 25.0f * this->camera.direction);
+
+        cooldown = 0.0f;
+    }
+
+    if(cooldown < 1.0f)
+        cooldown += 0.1f;
+
     if(this->camera.position.x > boundary_size/2 - 5)
         this->camera.position.x = boundary_size/2 - 5;
     if(this->camera.position.x < -(boundary_size/2 - 5))
@@ -432,10 +505,6 @@ void WindowManagement::check_keyboard_pressing()
 
 void WindowManagement::mouse_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-    {
-
-    }
 
 }
 
