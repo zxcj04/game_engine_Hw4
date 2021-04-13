@@ -134,6 +134,8 @@ bool WindowManagement::init(string window_name)
 
     this->spatial_partition = true;
 
+    this->ball_radius = 150.0f;
+
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
     BuildScene::setup_view_volume(vao_view_volume);
@@ -251,7 +253,6 @@ void WindowManagement::mainloop()
 void WindowManagement::imgui()
 {
     static glm::vec3 ball_position;
-    static float ball_radius = 150.0f;
     // static glm::vec3 ball_speed = glm::vec3(0.0f, -10.0f, 0.0f);
     static vector<float> ball_speed = {0.0f, -10.0f, 0.0f};
     static bool overflow_decay = false;
@@ -428,7 +429,7 @@ void WindowManagement::check_keyboard_pressing()
 {
     // if(ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
     //     return;
-    static float cooldown = 1.0f;
+    static float cooldown = 0.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
@@ -477,14 +478,14 @@ void WindowManagement::check_keyboard_pressing()
         this->balls_handler->add_ball(boundary_size);
     }
 
-    if (enable_cursor && cooldown >= 1.0f && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    if (enable_cursor && cooldown >= this->ball_radius / 50.0f && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        this->balls_handler->add_ball(boundary_size, this->camera.position + this->camera.direction * 5.0f, 15.0f, 25.0f * this->camera.direction);
+        this->balls_handler->add_ball(boundary_size, this->camera.position + this->camera.direction * 5.0f, this->ball_radius, 25.0f * this->camera.direction);
 
         cooldown = 0.0f;
     }
 
-    if(cooldown < 1.0f)
+    if(cooldown < this->ball_radius / 50.0f)
         cooldown += 0.1f;
 
     if(this->camera.position.x > boundary_size/2 - 5)

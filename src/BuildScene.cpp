@@ -490,13 +490,19 @@ void BuildScene::render_view_volume(SCENE scene, unsigned int vao_view_volume, S
     model = glm::translate(model, position);
     model = glm::rotate(model, -glm::radians(yaw), glm::vec3(0, 1, 0));
     model = glm::rotate(model, -glm::radians(pitch), glm::vec3(1, 0, 0));
-    model = glm::scale(model, glm::vec3(far, far, far));
 
-    shader.set_uniform("model", model);
+    glm::mat4 model_far = glm::scale(model, glm::vec3(far, far, far));
+    glm::mat4 model_near = glm::scale(model, glm::vec3(near, near, near));
+
+    shader.set_uniform("model", model_far);
 
     glBindVertexArray(vao_view_volume);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    glDrawArrays(GL_TRIANGLES, 0, 18);
+
+    shader.set_uniform("model", model_near);
 
     glDrawArrays(GL_TRIANGLES, 0, 18);
 

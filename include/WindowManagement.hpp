@@ -109,5 +109,7 @@ class WindowManagement
 
         bool spatial_partition;
 
+        float ball_radius;
+
         BallsHandler *balls_handler;
 };

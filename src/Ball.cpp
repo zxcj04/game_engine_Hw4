@@ -135,8 +135,10 @@ bool Ball::check_ball_collision(Ball &ball, float decay)
         glm::vec3 v1 = glm::normalize(to_ball) * glm::dot(this->speed, glm::normalize(to_ball));
         glm::vec3 v2 = glm::normalize(-to_ball) * glm::dot(ball.speed, glm::normalize(-to_ball));
 
-        this->position = ball.position + glm::normalize(-to_ball) * (ball.radius + this->radius);
-        ball.position  = this->position + glm::normalize(to_ball) * (ball.radius + this->radius);
+        if(this->radius < ball.radius)
+            this->position = ball.position + glm::normalize(-to_ball) * (ball.radius + this->radius);
+        else
+            ball.position  = this->position + glm::normalize(to_ball) * (ball.radius + this->radius);
 
         // this->callis.push_back();
         // ball.callis.push_back();
@@ -253,9 +255,9 @@ void Ball::draw(Shader shader, glm::vec3 player_position, float yaw, float pitch
             culling = CULLING::INTERSECT;
         }
 
-        distance = glm::dot(position - player_position, glm::normalize(glm::cross(g - e, h - e))) - near;
+        distance = glm::dot(position - player_position, glm::normalize(glm::cross(h - e, f - e))) - near;
 
-        if(distance > radius)
+        if(distance < -radius)
         {
             culling = CULLING::OUTSIDE;
         }
