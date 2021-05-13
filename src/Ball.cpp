@@ -135,9 +135,9 @@ bool Ball::check_ball_collision(Ball &ball, float decay)
         glm::vec3 v1 = glm::normalize(to_ball) * glm::dot(this->speed, glm::normalize(to_ball));
         glm::vec3 v2 = glm::normalize(-to_ball) * glm::dot(ball.speed, glm::normalize(-to_ball));
 
-        if(this->radius < ball.radius)
+        // if(this->radius < ball.radius)
             this->position = ball.position + glm::normalize(-to_ball) * (ball.radius + this->radius);
-        else
+        // else
             ball.position  = this->position + glm::normalize(to_ball) * (ball.radius + this->radius);
 
         // this->callis.push_back();

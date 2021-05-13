@@ -55,7 +55,7 @@ else ifeq ($(findstring Darwin, $(shell uname -a)), Darwin)
 	rm = rm *.exe *.out imgui.ini
 	rm = rm -rf $(OBJ_DIR)
 else
-	LIBS += -L./lib/linux -lglfw3 -pthread -lXrandr -lXxf86vm -lXi -lXinerama -lX11 -ldl -lXcursor
+	LIBS += $(shell pkg-config --static --libs glfw3)
 
 	mkdir = mkdir -p $(OBJ_DIR)
 
