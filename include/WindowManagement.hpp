@@ -111,5 +111,7 @@ class WindowManagement
 
         float ball_radius;
 
+        bool only_first;
+
         BallsHandler *balls_handler;
 };

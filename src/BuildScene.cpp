@@ -3,43 +3,63 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-void BuildScene::set_viewport(SCENE scene, int width, int height)
+int BuildScene::first_width = 0;
+int BuildScene::first_height = 0;
+
+void BuildScene::set_viewport(SCENE scene, int width, int height, bool only_first)
 {
+    first_width = width;
+    first_height = height;
+
+    if(width > height)
+        first_width = first_height;
+    else
+        first_height = first_width;
+
     switch(scene)
     {
         case SCENE::FIRST:
 
-            glViewport(0, 0, width * 3 / 4, height);
+            if(!only_first)
+                glViewport(0, 0, first_width, first_width);
+            else
+                glViewport(0, 0, width, height);
 
             break;
 
         case SCENE::ORTHO_X:
 
-            glViewport(width * 3 / 4, height * 2 / 3, width * 1 / 4, height * 1 / 3);
+            glViewport(first_width, height * 2 / 3, width - first_width, height * 1 / 3);
 
             break;
 
         case SCENE::ORTHO_Y:
 
-            glViewport(width * 3 / 4, height * 1 / 3, width * 1 / 4, height * 1 / 3);
+            glViewport(first_width, height * 1 / 3, width - first_width, height * 1 / 3);
 
             break;
 
         case SCENE::ORTHO_Z:
 
-            glViewport(width * 3 / 4,              0, width * 1 / 4, height * 1 / 3);
+            glViewport(first_width,              0, width - first_width, height * 1 / 3);
 
             break;
     }
 }
 
-void BuildScene::set_projection(SCENE scene, glm::mat4 &projection, Camera camera, int width, int height, float near, float far)
+void BuildScene::set_projection(SCENE scene, glm::mat4 &projection, Camera camera, int width, int height, float near, float far, bool only_first)
 {
+    float t_w = (float) width - first_width;
+    float t_h = (float) height * 1 / 3;
+
     switch(scene)
     {
         case SCENE::FIRST:
 
-            projection = glm::perspective(glm::radians(90.0f), (float)width / height * 3 / 4, near, far);
+            if(!only_first)
+                projection = glm::perspective(glm::radians(90.0f), (float)1, near, far);
+            else
+                projection = glm::perspective(glm::radians(90.0f), (float)width / height, near, far);
 
             break;
 
@@ -51,24 +71,18 @@ void BuildScene::set_projection(SCENE scene, glm::mat4 &projection, Camera camer
             {
                 projection = glm::ortho(
                     camera.left                              , camera.right,
-                    camera.bottom * ((float) height / width * 4 / 3) , camera.top * ((float) height / width * 4 / 3),
+                    camera.bottom * t_h / t_w                , camera.top * t_h / t_w,
                     camera.near                              , camera.far
                 );
             }
             else
             {
                 projection = glm::ortho(
-                    camera.left * ((float) width / height * 3 / 4)  , camera.right * ((float) width / height * 3 / 4),
+                    camera.left * t_w / t_h                 , camera.right * t_w / t_h,
                     camera.bottom                           , camera.top,
                     camera.near                             , camera.far
                 );
             }
-
-            // projection = glm::ortho(
-            //     camera.left   , camera.right,
-            //     camera.bottom , camera.top,
-            //     camera.near   , camera.far
-            // );
 
             break;
     }
@@ -113,12 +127,12 @@ void BuildScene::setup_boundary(unsigned int &vao_boundary)
         -0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  0.0f,
         -0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f
+        -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f
     };
 
     unsigned int VBO;

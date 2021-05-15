@@ -136,6 +136,8 @@ bool WindowManagement::init(string window_name)
 
     this->ball_radius = 150.0f;
 
+    this->only_first = true;
+
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
     BuildScene::setup_view_volume(vao_view_volume);
@@ -219,9 +221,13 @@ void WindowManagement::display()
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
 
     render_scene(SCENE::FIRST);
-    render_scene(SCENE::ORTHO_X);
-    render_scene(SCENE::ORTHO_Y);
-    render_scene(SCENE::ORTHO_Z);
+
+    if(!only_first)
+    {
+        render_scene(SCENE::ORTHO_X);
+        render_scene(SCENE::ORTHO_Y);
+        render_scene(SCENE::ORTHO_Z);
+    }
 }
 
 void WindowManagement::mainloop()
@@ -261,8 +267,8 @@ void WindowManagement::imgui()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 475), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(250, 450), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 500), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(250, 475), ImGuiCond_Once);
 
     ImGui::Begin("Is that a bird?");
     {
@@ -274,6 +280,8 @@ void WindowManagement::imgui()
         ImGui::InputFloat("-Far-",  &far_distance, 1.0f, 100.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
         // ImGui::SliderFloat("Near", &near_distance, 0.1f, far_distance  , "%.1f");
         ImGui::InputFloat("-Near-", &near_distance, 1.0f, 100.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
+
+        ImGui::Checkbox("perspective only", &only_first);
 
         ImGui::Text("----------------------------");
 
@@ -337,8 +345,8 @@ void WindowManagement::render_scene(SCENE scene)
 
     glm::mat4 projection;
 
-    BuildScene::set_viewport(scene, width, height);
-    BuildScene::set_projection(scene, projection, this->camera, width, height, this->near_distance, this->far_distance);
+    BuildScene::set_viewport(scene, width, height, only_first);
+    BuildScene::set_projection(scene, projection, this->camera, width, height, this->near_distance, this->far_distance, only_first);
 
     shader_texture.set_uniform("projection", projection);
     shader_texture.set_uniform("light_color", light_color);

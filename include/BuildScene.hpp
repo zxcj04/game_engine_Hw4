@@ -19,8 +19,8 @@ using namespace std;
 class BuildScene
 {
     public:
-        static void set_viewport(SCENE, int, int);
-        static void set_projection(SCENE, glm::mat4 &, Camera, int, int, float, float);
+        static void set_viewport(SCENE, int, int, bool only_first = false);
+        static void set_projection(SCENE, glm::mat4 &, Camera, int, int, float, float, bool only_first = false);
 
         static void setup_boundary(unsigned int &);
         static void render_boundary(SCENE, unsigned int, Shader, unsigned int, float);
@@ -35,4 +35,7 @@ class BuildScene
         static void render_view_volume(SCENE, unsigned int, Shader, glm::vec3, float, float, float, float);
 
         static void setup_texture(unsigned int &, string);
+
+        static int first_width;
+        static int first_height;
 };
