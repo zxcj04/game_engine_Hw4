@@ -93,46 +93,46 @@ void BuildScene::setup_boundary(unsigned int &vao_boundary)
     float vertices[] = {
         // positions          // normals          // color           // texture coords
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  1.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  1.0f,  1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  4.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  4.0f,  1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  4.0f,  1.0f,
         -0.5f,  0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  0.0f,  1.0f,
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f,  0.0f,  0.0f,
 
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  1.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  4.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  4.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  4.0f,  1.0f,
         -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  0.0f,  1.0f,
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, 1.0f,  0.0f,  0.0f,
 
         -0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  1.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  1.0f,  1.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  4.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  4.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  4.0f,  1.0f,
         -0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  0.0f,  1.0f,
         -0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.5f, 0.0f, 0.0f,  0.0f,  0.0f,
 
          0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  1.0f,  1.0f,
+         0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  4.0f,  0.0f,
+         0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  4.0f,  1.0f,
+         0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  4.0f,  1.0f,
          0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  0.0f,  1.0f,
          0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, 0.0f,  0.0f,  0.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  4.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  4.0f,  4.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  4.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  4.0f,  0.0f,
         -0.5f, -0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f, 0.0f,  0.0f,  4.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f
+        // -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f,
+        //  0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  1.0f,
+        //  0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+        //  0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+        // -0.5f,  0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  0.0f,
+        // -0.5f,  0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, 0.0f,  0.0f,  1.0f
     };
 
     unsigned int VBO;
@@ -174,7 +174,7 @@ void BuildScene::render_boundary(SCENE scene, unsigned int vao_boundary, Shader 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 50.0f));
-    model = glm::scale(model, glm::vec3(size, size, size));
+    model = glm::scale(model, glm::vec3(size, size / 4, size));
 
     shader.set_uniform("model", model);
 
@@ -408,7 +408,7 @@ void BuildScene::setup_ball(unsigned int &vao_player, int &size)
     size = vertices.size() / 3;
 }
 
-void BuildScene::render_ball(Shader shader, unsigned int texture_ball, unsigned int vao_ball, glm::vec3 position, glm::vec3 angle, float ball_radius, int size, CULLING culling)
+void BuildScene::render_ball(Shader shader, unsigned int texture_ball, unsigned int vao_ball, glm::vec3 position, glm::vec3 angle, float ball_radius, int size, TYPE type)
 {
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -436,17 +436,17 @@ void BuildScene::render_ball(Shader shader, unsigned int texture_ball, unsigned 
 
     shader.set_uniform("model", model);
 
-    switch(culling)
+    switch(type)
     {
-        case CULLING::INSIDE:
+        case TYPE::RANDOM:
             shader.set_uniform("culling", 0);
 
             break;
-        case CULLING::INTERSECT:
+        case TYPE::AI:
             shader.set_uniform("culling", 1);
 
             break;
-        case CULLING::OUTSIDE:
+        case TYPE::FOOD:
             shader.set_uniform("culling", 2);
 
             break;
@@ -652,8 +652,8 @@ void BuildScene::setup_texture(unsigned int &texture, string file_path)
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load and generate the texture

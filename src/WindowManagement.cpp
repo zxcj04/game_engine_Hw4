@@ -52,7 +52,7 @@ bool WindowManagement::init(string window_name)
     this->last_y = height/2;
 
     this->near_distance = 0.2f;
-    this->far_distance = 4000.0f;
+    this->far_distance = 10000.0f;
 
     this->window = glfwCreateWindow(width, height, window_name.c_str(), NULL, NULL);
 
@@ -87,7 +87,7 @@ bool WindowManagement::init(string window_name)
 
     glfwMakeContextCurrent(this->window);
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     // glfwSetWindowAspectRatio(window, 1, 1);
 
@@ -119,22 +119,41 @@ bool WindowManagement::init(string window_name)
 
     cout << this->shader.ID << " " << this->shader_texture.ID << endl;
 
-    this->boundary_size = 2000.0f;
+    this->boundary_size = 8000.0f;
 
     this->camera = Camera(boundary_size);
 
     this->light_color = glm::vec3(1.0f, 1.0f, 1.0f);
     this->clear_color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
 
-    this->enable_cursor = true;
+    this->enable_cursor = false;
 
-    this->decay = 1.0f;
+    this->decay = 0.8f;
 
     this->spatial_partition = true;
 
     this->ball_radius = 150.0f;
 
+    this->ball_type = 0;
+
     this->only_first = true;
+
+
+    if(this->enable_cursor)
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+        ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+    }
+    else
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+    }
 
     BuildScene::setup_boundary(vao_boundary);
     BuildScene::setup_player(vao_player);
@@ -142,7 +161,7 @@ bool WindowManagement::init(string window_name)
 
     BuildScene::setup_texture(texture_wood, "assets/wood.png");
     BuildScene::setup_texture(texture_ball, "assets/brick.jpg");
-    BuildScene::setup_texture(texture_cube, "assets/container.jpg");
+    BuildScene::setup_texture(texture_cube, "assets/brick.jpg");
 
     balls_handler = new BallsHandler(this->boundary_size);
 
@@ -168,9 +187,6 @@ void WindowManagement::set_callback_functions()
     auto viewportCb = [](GLFWwindow * w, int width, int height){
         static_cast<WindowManagement*>(glfwGetWindowUserPointer(w))->framebuffer_callback(w, width, height);
     };
-
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwSetKeyCallback(this->window, keyboardCb);
     glfwSetMouseButtonCallback(window, mouseCb);
@@ -312,15 +328,21 @@ void WindowManagement::imgui()
 
         // void BallsHandler::add_ball(float boundary_size, glm::vec3 position, float radius, glm::vec3 speed)
 
-        ImGui::InputFloat("radius", &ball_radius, 1.0f, 50.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
+        // ImGui::InputFloat("radius", &ball_radius, 1.0f, 50.0f, "%.1f", ImGuiInputTextFlags_AutoSelectAll);
 
         ImGui::InputFloat3("init speed", ball_speed.data(), "%.1f");
+
+        ImGui::RadioButton("Random", &ball_type, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("AI", &ball_type, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Food", &ball_type, 2);
 
         if(ImGui::Button("Generate at now position", ImVec2(200, 25)))
         {
             ball_position = this->camera.position;
 
-            this->balls_handler->add_ball(boundary_size, ball_position, ball_radius, glm::vec3(ball_speed[0], ball_speed[1], ball_speed[2]));
+            this->balls_handler->add_ball(ball_position, 75.0f, glm::vec3(ball_speed[0], ball_speed[1], ball_speed[2]), (TYPE)ball_type);
         }
 
         ImGui::Text("----------------------------");
@@ -352,11 +374,7 @@ void WindowManagement::render_scene(SCENE scene)
 
     BuildScene::render_boundary(scene, vao_boundary, this->shader_texture, texture_wood, boundary_size);
 
-    this->balls_handler->draw_balls(this->shader_texture, texture_ball
-                                  , this->camera.position, this->camera.yaw, this->camera.pitch
-                                  , this->near_distance, this->far_distance);
-
-    this->balls_handler->draw_cubes(this->shader_texture, texture_cube);
+    this->balls_handler->draw_cubes(this->shader_texture, texture_cube, spatial_partition);
 
     this->shader.use();
 
@@ -364,6 +382,10 @@ void WindowManagement::render_scene(SCENE scene)
     shader.set_uniform("light_color", light_color);
     shader.set_uniform("enable_light", true);
     camera.use(this->shader, scene);
+
+    this->balls_handler->draw_balls(this->shader, texture_ball
+                                  , this->camera.position, this->camera.yaw, this->camera.pitch
+                                  , this->near_distance, this->far_distance);
 
     BuildScene::render_player(scene, vao_player, this->shader, this->camera.position);
 
@@ -446,31 +468,33 @@ void WindowManagement::check_keyboard_pressing()
 
     glm::vec3 front = glm::normalize(glm::vec3(this->camera.direction.x, 0, this->camera.direction.z));
 
+    static float moving_speed = 100.0f;
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
-        this->camera.position +=  front * 20.0f;
+        this->camera.position +=  front * moving_speed;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
-        this->camera.position += -front * 20.0f;
+        this->camera.position += -front * moving_speed;
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        this->camera.position +=  glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f))) * 20.0f;
+        this->camera.position +=  glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f))) * moving_speed;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        this->camera.position += -glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f))) * 20.0f;
+        this->camera.position += -glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f))) * moving_speed;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
-        this->camera.position += -glm::vec3(0.0f, 1.0f, 0.0f) * 20.0f;
+        this->camera.position += -glm::vec3(0.0f, 1.0f, 0.0f) * moving_speed;
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-        this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * 20.0f;
+        this->camera.position +=  glm::vec3(0.0f, 1.0f, 0.0f) * moving_speed;
     }
 
     if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
@@ -495,7 +519,7 @@ void WindowManagement::check_keyboard_pressing()
 
     if (enable_cursor && cooldown >= this->ball_radius / 50.0f && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        this->balls_handler->add_ball(boundary_size, this->camera.position + this->camera.direction * 5.0f, this->ball_radius, 25.0f * this->camera.direction);
+        this->balls_handler->add_ball(this->camera.position + this->camera.direction * 5.0f, 75.0f, 25.0f * this->camera.direction, (TYPE)ball_type);
 
         cooldown = 0.0f;
     }
@@ -503,20 +527,20 @@ void WindowManagement::check_keyboard_pressing()
     if(cooldown < this->ball_radius / 50.0f)
         cooldown += 0.1f;
 
-    if(this->camera.position.x > boundary_size/2 - 5)
-        this->camera.position.x = boundary_size/2 - 5;
-    if(this->camera.position.x < -(boundary_size/2 - 5))
-        this->camera.position.x = -(boundary_size/2 - 5);
+    // if(this->camera.position.x > boundary_size/2 - 5)
+    //     this->camera.position.x = boundary_size/2 - 5;
+    // if(this->camera.position.x < -(boundary_size/2 - 5))
+    //     this->camera.position.x = -(boundary_size/2 - 5);
 
-    if(this->camera.position.y > boundary_size/2 - 5)
-        this->camera.position.y = boundary_size/2 - 5;
-    if(this->camera.position.y < -(boundary_size/2 - 5))
-        this->camera.position.y = -(boundary_size/2 - 5);
+    // if(this->camera.position.y > boundary_size/2 - 5)
+    //     this->camera.position.y = boundary_size/2 - 5;
+    // if(this->camera.position.y < -(boundary_size/2 - 5))
+    //     this->camera.position.y = -(boundary_size/2 - 5);
 
-    if(this->camera.position.z > boundary_size/2 - 5)
-        this->camera.position.z = boundary_size/2 - 5;
-    if(this->camera.position.z < -(boundary_size/2 - 5))
-        this->camera.position.z = -(boundary_size/2 - 5);
+    // if(this->camera.position.z > boundary_size/2 - 5)
+    //     this->camera.position.z = boundary_size/2 - 5;
+    // if(this->camera.position.z < -(boundary_size/2 - 5))
+    //     this->camera.position.z = -(boundary_size/2 - 5);
 }
 
 void WindowManagement::mouse_callback(GLFWwindow* window, int button, int action, int mods)

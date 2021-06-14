@@ -2,7 +2,7 @@
 
 int Ball::count = 0;
 
-Ball::Ball(glm::vec3 position, float radius, glm::vec3 speed)
+Ball::Ball(glm::vec3 position, float radius, glm::vec3 speed, TYPE type)
 {
     this->position = position;
 
@@ -20,6 +20,10 @@ Ball::Ball(glm::vec3 position, float radius, glm::vec3 speed)
     this->angle = glm::vec3(0.0f, 0.0f, 0.0f);
     this->angle_speed = glm::vec3(0.0f, 0.0f, 0.0f);
     this->angle_acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    this->type = type;
+
+    this->deleted = false;
 }
 
 Ball::~Ball()
@@ -32,12 +36,12 @@ vector<bool> Ball::check_boundary_collision(float decay)
     vector<bool> ret(6, false);
 
     vector<float> boundary_value = {
-         1000 - this->radius,
-         1000 - this->radius,
-         1000 - this->radius,
+         4000 - this->radius,
+         -500 - this->radius,
+         4000 - this->radius,
+        -4000 + this->radius,
         -1000 + this->radius,
-        -1000 + this->radius,
-        -1000 + this->radius,
+        -4000 + this->radius,
     };
 
     static vector<glm::vec3> boundary_normal = {
@@ -268,7 +272,7 @@ void Ball::move(vector<Ball> &balls, float decay)
     // {
         this->acceleration += gravity;
 
-        this->acceleration += friction;
+        // this->acceleration += friction;
     // }
 
     this->speed += this->acceleration;
@@ -346,61 +350,17 @@ void Ball::draw(Shader shader, unsigned int texture_ball, glm::vec3 player_posit
     };
 
     static float distance;
-    static CULLING culling;
 
-    culling = CULLING::INSIDE;
-
-    for(auto plane : planes)
-    {
-        distance = glm::dot(position - player_position, plane);
-
-        if(distance > radius)
-        {
-            culling = CULLING::OUTSIDE;
-
-            break;
-        }
-        else if(abs(distance) < radius)
-        {
-            culling = CULLING::INTERSECT;
-        }
-    }
-
-    if(culling != CULLING::OUTSIDE)
-    {
-        distance = glm::dot(position - player_position, glm::normalize(glm::cross(d - a, b - a))) - far;
-
-        if(distance > radius)
-        {
-            culling = CULLING::OUTSIDE;
-        }
-        else if(abs(distance) < radius)
-        {
-            culling = CULLING::INTERSECT;
-        }
-
-        distance = glm::dot(position - player_position, glm::normalize(glm::cross(h - e, f - e))) - near;
-
-        if(distance < -radius)
-        {
-            culling = CULLING::OUTSIDE;
-        }
-        else if(abs(distance) < radius)
-        {
-            culling = CULLING::INTERSECT;
-        }
-    }
-
-    BuildScene::render_ball(shader, texture_ball, vao, position, angle, radius, size, culling);
+    BuildScene::render_ball(shader, texture_ball, vao, position, angle, radius, size, type);
 }
 
 void Ball::update_regular_grid(vector<vector<vector<set<int>>>> &regular_grid, int gap)
 {
-    glm::ivec3 now_grid = glm::ivec3((position + 1000.0f) / (float)gap + 1.0f);
+    glm::ivec3 now_grid = glm::ivec3((position + 4000.0f) / (float)gap + 1.0f);
 
-    if(now_grid.x < 0 || now_grid.x > 2000 / gap + 1 ||
-       now_grid.y < 0 || now_grid.y > 2000 / gap + 1 ||
-       now_grid.z < 0 || now_grid.z > 2000 / gap + 1
+    if(now_grid.x < 0 || now_grid.x > 8000 / gap + 1 ||
+       now_grid.y < 0 || now_grid.y > 8000 / gap + 1 ||
+       now_grid.z < 0 || now_grid.z > 8000 / gap + 1
     )
         return;
 

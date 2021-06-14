@@ -21,10 +21,10 @@ Camera::Camera(float boundary_size)
 {
     this->zoom_value = 30.0f;
 
-    this->position = glm::vec3(0.0f, 0.0f, 0.0f);
+    this->position = glm::vec3(0.0f, 5000.0f, 0.0f);
 
-    this->yaw        = 225.0f;
-    this->pitch      = 0.0f;
+    this->yaw        = 0.0f;
+    this->pitch      = -89.0f;
 
     this->left   =  -(boundary_size * 3/4) ;
     this->right  =   (boundary_size * 3/4) ;

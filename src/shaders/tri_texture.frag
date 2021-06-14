@@ -34,13 +34,16 @@ void main()
 
     float ambient_strength = 0.2;
     vec3 ambient = ambient_strength * light_color;
+    // ambient = vec3(0, 0, 0);
 
     float diff = max(dot(norm, light_direction), 0.0);
     vec3 diffuse = diff * light_color;
+    // diffuse = vec3(0, 0, 0);
 
     float specular_strength = 0.5;
     float spec = pow(max(dot(view_direction, reflect_direction), 0.0), 32);
     vec3 specular = specular_strength * spec * light_color;
+    // specular = vec3(0, 0, 0);
 
     float cutoff = cos(radians(5.0f));
     float outer_cutoff = cos(radians(50.0f));

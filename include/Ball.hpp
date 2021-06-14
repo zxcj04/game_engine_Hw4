@@ -18,7 +18,7 @@ using namespace std;
 class Ball
 {
     public:
-        Ball(glm::vec3, float, glm::vec3);
+        Ball(glm::vec3, float, glm::vec3, TYPE);
         ~Ball();
 
         void draw(Shader, unsigned int, glm::vec3, float, float, float, float);
@@ -32,7 +32,7 @@ class Ball
 
         static int count;
 
-    private:
+    // private:
 
         glm::vec3 position;
         glm::vec3 speed;
@@ -50,4 +50,7 @@ class Ball
         float radius;
         int size;
 
+        TYPE type;
+
+        bool deleted;
 };

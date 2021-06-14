@@ -5,7 +5,7 @@ enum SCENE
     FIRST, ORTHO_X, ORTHO_Y, ORTHO_Z
 };
 
-enum CULLING
+enum TYPE
 {
-    INSIDE, INTERSECT, OUTSIDE
+    RANDOM, AI, FOOD
 };

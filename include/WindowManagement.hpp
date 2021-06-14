@@ -23,7 +23,7 @@
 #include <constants.hpp>
 #include <Shader.hpp>
 #include <Camera.hpp>
-#include <Volume.hpp>
+// #include <Volume.hpp>
 #include <BuildScene.hpp>
 #include <BallsHandler.hpp>
 
@@ -110,6 +110,8 @@ class WindowManagement
         bool spatial_partition;
 
         float ball_radius;
+
+        int ball_type;
 
         bool only_first;
 

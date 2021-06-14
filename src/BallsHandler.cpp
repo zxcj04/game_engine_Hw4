@@ -19,6 +19,63 @@ bool to_near_to_another_cube(vector<Cube> cubes, glm::vec3 position, float lengt
     return ret;
 }
 
+void create_maze(vector<vector<int>> &maze, int x, int y, int height, int width)
+{
+    static int offsetX[4] = {-2, 2, 0, 0};
+    static int offsetY[4] = {0, 0, -2, 2};
+    int count = 0;
+    int i, random;
+
+    while(1)
+    {
+        count = 0;
+        for(i = 0 ; i < 4 ; i++)
+            if( x + offsetX[i] >= 0 && x + offsetX[i] <= height &&
+                y + offsetY[i] >= 0 && y + offsetY[i] <= width &&
+                maze[x + offsetX[i]][y + offsetY[i]] == -1
+              )
+                count++;
+
+        // cout << "( " << x << ", " << y << " ): " << count << endl;
+
+        if(count == 0)
+            return;
+
+        do
+        {
+            random = rand() % 4;
+        }
+        while(x + offsetX[random] < 0 || x + offsetX[random] > height ||
+              y + offsetY[random] < 0 || y + offsetY[random] > width  ||
+              maze[x + offsetX[random]][y + offsetY[random]] != -1);
+
+        maze[x + offsetX[random]][y + offsetY[random]] = 1;
+        maze[x + (offsetX[random] / 2)][y + (offsetY[random] / 2)] = 1;
+
+        create_maze(maze, x + offsetX[random], y + offsetY[random], height, width);
+    }
+}
+
+vector<vector<int>> generate_maze(float boundary_size, float cube_size)
+{
+    int width = boundary_size / cube_size;
+    int height = boundary_size / cube_size;
+
+    vector<vector<int>> maze;
+
+    maze.assign(width, vector<int>(height, 0));
+
+    for(int w = 0; w < width + 1; w++)
+        for(int h = 0; h < height + 1; h++)
+            if(h % 2 == 1 && w % 2 == 1)
+                maze[h][w] = -1;  // avail
+
+    create_maze(maze, 1, 1, height, width);
+
+    return maze;
+
+}
+
 BallsHandler::BallsHandler(float boundary_size)
 {
     random_device rd;
@@ -30,10 +87,14 @@ BallsHandler::BallsHandler(float boundary_size)
     regular_grid = vector<vector<vector<set<int>>>>(boundary_size/gap + 2, vector<vector<set<int>>>(boundary_size/gap + 2, vector<set<int>>(boundary_size/gap + 2, set<int>())));
     cube_regular_grid = vector<vector<vector<set<int>>>>(boundary_size/gap + 2, vector<vector<set<int>>>(boundary_size/gap + 2, vector<set<int>>(boundary_size/gap + 2, set<int>())));
 
-    for(int i = 0 ; i < 5 ; i++)
-    {
-        add_cube(boundary_size);
-    }
+    this->maze = generate_maze(boundary_size, 500.0f);
+
+    float gap = 500.0f;
+
+    for(size_t h = 0; h < this->maze.size(); h++)
+        for(size_t w = 0; w < this->maze[h].size(); w++)
+            if(this->maze[h][w] != 1)
+                add_cube(boundary_size, h * gap, w * gap);
 }
 
 BallsHandler::~BallsHandler()
@@ -41,18 +102,22 @@ BallsHandler::~BallsHandler()
 
 }
 
-void BallsHandler::add_ball(float boundary_size, glm::vec3 position, float radius, glm::vec3 speed)
+void BallsHandler::add_ball(glm::vec3 position, float radius, glm::vec3 speed, TYPE type)
 {
-    _balls.push_back(Ball(position, radius, speed));
+    position.y = -1000 + radius;
+    _balls.push_back(Ball(position, radius, speed, type));
 }
 
 void BallsHandler::add_ball(float boundary_size)
 {
     uniform_real_distribution<float> unif_position(-boundary_size / 2, boundary_size / 2);
-    uniform_real_distribution<float> unif_radius(50, 250);
+    uniform_real_distribution<float> unif_radius(50, 175);
     uniform_real_distribution<float> unif_speed(-50, 50);
+    uniform_int_distribution<int> unif_type(0, 2);
 
-    float radius = unif_radius(rd_generator);
+    float radius = 75.0f;
+
+    int type = unif_type(rd_generator);
 
     glm::vec3 position;
     glm::vec3 speed;
@@ -60,41 +125,27 @@ void BallsHandler::add_ball(float boundary_size)
     do
     {
         position.x = unif_position(rd_generator);
-        position.y = unif_position(rd_generator);
+        position.y = radius;
         position.z = unif_position(rd_generator);
 
-    } while (abs(position.x) + radius >= 1000 ||
-             abs(position.y) + radius >= 1000 ||
-             abs(position.z) + radius >= 1000);
+    } while (abs(position.x) + radius >= boundary_size / 2 ||
+             abs(position.y) + radius >= boundary_size / 2 ||
+             abs(position.z) + radius >= boundary_size / 2 ||
+             this->maze[(position.x + boundary_size / 2) / 500][(position.z + boundary_size / 2) / 500] != 1);
 
-    speed = glm::vec3(
-        unif_speed(rd_generator),
-        unif_speed(rd_generator),
-        unif_speed(rd_generator)
-    );
+    speed = glm::vec3( 0, 0, 0 );
 
-    add_ball(boundary_size, position, radius, speed);
+    add_ball(position, radius, speed, (TYPE) type);
 }
 
-void BallsHandler::add_cube(float boundary_size)
+void BallsHandler::add_cube(float boundary_size, float x, float y)
 {
-    uniform_real_distribution<float> unif_cube_length(250, 500);
-    uniform_real_distribution<float> unif_cube_position(-boundary_size / 2, boundary_size / 2);
-    uniform_real_distribution<float> unif_cube_rotate(0, 360);
-
-    float length = unif_cube_length(rd_generator);
-    float rotate = unif_cube_rotate(rd_generator);
+    float length = 500;
+    float rotate = 0;
     glm::vec3 position;
 
-    do
-    {
-        position.x = unif_cube_position(rd_generator);
-        position.y = -boundary_size / 2 + length / 2;
-        position.z = unif_cube_position(rd_generator);
-
-    } while (abs(position.x) + length / 2 * sqrt(2) >= 1000 ||
-                abs(position.z) + length / 2 * sqrt(2) >= 1000 ||
-                to_near_to_another_cube(_cubes, position, length));
+    position = glm::vec3(x + length / 2 - boundary_size / 2, 0, y + length / 2 - boundary_size / 2);
+    position.y = -boundary_size / 4 / 2 + length / 2;
 
     Cube cube = Cube(position, length, rotate);
 
@@ -104,16 +155,23 @@ void BallsHandler::add_cube(float boundary_size)
 void BallsHandler::draw_balls(Shader shader, unsigned int texture_ball, glm::vec3 player_position, float yaw, float pitch, float near, float far)
 {
     for(auto & ball: _balls)
+    {
+        if(ball.deleted)
+            continue;
+
         ball.draw(shader, texture_ball, player_position, yaw, pitch, near, far);
+    }
 }
 
 void BallsHandler::move_balls(float decay, bool spatial_partition)
 {
+    vector<int> del;
+
     if(spatial_partition)
     {
-        for(int i = 1; i <= 2000 / gap; i++)
-        for(int j = 1; j <= 2000 / gap; j++)
-        for(int k = 1; k <= 2000 / gap; k++)
+        for(int i = 1; i <= 8000 / gap; i++)
+        for(int j = 1; j <= 8000 / gap; j++)
+        for(int k = 1; k <= 8000 / gap; k++)
         for(auto one: regular_grid[i][j][k])
         {
             for(int i2 = i - 1; i2 <= i + 1; i2++)
@@ -125,7 +183,70 @@ void BallsHandler::move_balls(float decay, bool spatial_partition)
                     if(one == two)
                         continue;
 
-                    _balls[one].check_ball_collision(_balls[two], decay);
+                    if(_balls[one].deleted || _balls[two].deleted)
+                        continue;
+
+                    bool colli = _balls[one].check_ball_collision(_balls[two], decay);
+
+                    if(colli && _balls[one].type != _balls[two].type)
+                    {
+                        if(_balls[two].type == TYPE::FOOD)
+                        {
+                            if(_balls[one].radius < 225)
+                                _balls[one].radius += 25;
+                            else
+                            {
+                                _balls[one].radius -= 50;
+
+                                add_ball(_balls[one].position, 75.0f, glm::vec3(0, 0, 0), _balls[one].type);
+                            }
+
+                            _balls[two].deleted = true;
+
+                            del.push_back(two);
+                        }
+                        else
+                        {
+                            int bigger, smaller;
+
+                            if(_balls[one].radius > _balls[two].radius)
+                            {
+                                bigger = one;
+                                smaller = two;
+                            }
+                            else if(_balls[one].radius < _balls[two].radius)
+                            {
+                                bigger = two;
+                                smaller = one;
+                            }
+                            else
+                            {
+                                if(rand() > 0.5)
+                                {
+                                    bigger = two;
+                                    smaller = one;
+                                }
+                                else
+                                {
+                                    bigger = two;
+                                    smaller = one;
+                                }
+                            }
+
+                            _balls[bigger].radius += _balls[smaller].radius;
+
+                            if(_balls[bigger].radius > 225)
+                            {
+                                add_ball(_balls[bigger].position, _balls[bigger].radius / 2, glm::vec3(0, 0, 0), _balls[bigger].type);
+
+                                _balls[bigger].radius /= 2;
+                            }
+
+                            _balls[smaller].deleted = true;
+
+                            del.push_back(smaller);
+                        }
+                    }
                 }
             }
 
@@ -156,8 +277,22 @@ void BallsHandler::move_balls(float decay, bool spatial_partition)
             }
     }
 
+    for(auto to_delete: del)
+    {
+        Ball del_ball = _balls[to_delete];
+
+        regular_grid[del_ball.grid_position.x][del_ball.grid_position.y][del_ball.grid_position.z].erase(del_ball.number);
+
+        // _balls.erase(del_ball);
+
+        _balls[to_delete].deleted = true;
+    }
+
     for(auto & ball: _balls)
     {
+        if(ball.deleted)
+            continue;
+
         if(spatial_partition)
             ball.update_regular_grid(regular_grid, gap);
 
@@ -177,9 +312,9 @@ void BallsHandler::reset_balls()
 {
     _balls.clear();
 
-    for(int i = 0; i <= 2000 / gap + 1; i++)
-    for(int j = 0; j <= 2000 / gap + 1; j++)
-    for(int k = 0; k <= 2000 / gap + 1; k++)
+    for(int i = 0; i <= 8000 / gap + 1; i++)
+    for(int j = 0; j <= 8000 / gap + 1; j++)
+    for(int k = 0; k <= 8000 / gap + 1; k++)
     {
         regular_grid[i][j][k].clear();
     }
@@ -191,23 +326,33 @@ void BallsHandler::reset_cubes(float boundary_size)
 {
     _cubes.clear();
 
-    for(int i = 0; i <= 2000 / gap + 1; i++)
-    for(int j = 0; j <= 2000 / gap + 1; j++)
-    for(int k = 0; k <= 2000 / gap + 1; k++)
+    for(int i = 0; i <= 8000 / gap + 1; i++)
+    for(int j = 0; j <= 8000 / gap + 1; j++)
+    for(int k = 0; k <= 8000 / gap + 1; k++)
     {
         cube_regular_grid[i][j][k].clear();
     }
 
     Cube::count = 0;
 
-    for(int i = 0 ; i < 5 ; i++)
-    {
-        add_cube(boundary_size);
-    }
+    // for(int i = 0 ; i < 15 ; i++)
+    // {
+    //     add_cube(boundary_size);
+    // }
+
+    this->maze = generate_maze(boundary_size, 500.0f);
+
+    float gap = 500.0f;
+
+    for(size_t h = 0; h < this->maze.size(); h++)
+        for(size_t w = 0; w < this->maze[h].size(); w++)
+            if(this->maze[h][w] != 1)
+                add_cube(boundary_size, h * gap, w * gap);
 }
 
-void BallsHandler::draw_cubes(Shader shader, unsigned int texture_cube)
+void BallsHandler::draw_cubes(Shader shader, unsigned int texture_cube, bool show)
 {
+    if(show)
     for(auto & cube: _cubes)
         cube.draw(shader, texture_cube);
 }

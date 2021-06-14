@@ -29,11 +29,11 @@ void Cube::draw(Shader shader, unsigned int texture_cube)
 
 void Cube::update_regular_grid(vector<vector<vector<set<int>>>> &regular_grid, int gap)
 {
-    glm::ivec3 now_grid = glm::ivec3((position + 1000.0f) / (float)gap + 1.0f);
+    glm::ivec3 now_grid = glm::ivec3((position + 4000.0f) / (float)gap + 1.0f);
 
-    if(now_grid.x < 0 || now_grid.x > 2000 / gap + 1 ||
-       now_grid.y < 0 || now_grid.y > 2000 / gap + 1 ||
-       now_grid.z < 0 || now_grid.z > 2000 / gap + 1
+    if(now_grid.x < 0 || now_grid.x > 8000 / gap + 1 ||
+       now_grid.y < 0 || now_grid.y > 8000 / gap + 1 ||
+       now_grid.z < 0 || now_grid.z > 8000 / gap + 1
     )
         return;
 

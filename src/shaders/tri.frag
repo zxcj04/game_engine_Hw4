@@ -73,10 +73,7 @@ void main()
 
     vec4 result;
 
-    if(culling == -1)
-        result.rgb = (ambient + diffuse * intensity + specular * intensity) * _color.rgb;
-    else
-        result.rgb = (ambient + diffuse + specular) * _color.rgb;
+    result.rgb = (ambient + diffuse * intensity + specular * intensity) * _color.rgb;
 
     result.a = _color.a;
 
