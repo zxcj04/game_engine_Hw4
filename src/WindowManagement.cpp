@@ -1,6 +1,6 @@
 #include <WindowManagement.hpp>
 
-#define GLFW_MINOR_VERSION 6
+#define GLFW_MINOR_VERSION 1
 
 WindowManagement::WindowManagement()
 {
@@ -87,7 +87,7 @@ bool WindowManagement::init(string window_name)
 
     glfwMakeContextCurrent(this->window);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     // glfwSetWindowAspectRatio(window, 1, 1);
 
@@ -106,7 +106,7 @@ bool WindowManagement::init(string window_name)
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(this->window, true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    ImGui_ImplOpenGL3_Init("#version 410");
 
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
@@ -137,6 +137,8 @@ bool WindowManagement::init(string window_name)
     this->ball_type = 0;
 
     this->only_first = true;
+
+    this->shrink = true;
 
 
     if(this->enable_cursor)
@@ -254,7 +256,8 @@ void WindowManagement::mainloop()
 
         this->check_keyboard_pressing();
 
-        this->balls_handler->move_balls(decay, spatial_partition);
+        this->balls_handler->move_balls(decay, spatial_partition, shrink);
+        this->balls_handler->add_food();
 
         imgui();
 
@@ -282,8 +285,8 @@ void WindowManagement::imgui()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 500), ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(250, 475), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(width - 275, height - 525), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(250, 500), ImGuiCond_Once);
 
     ImGui::Begin("Is that a bird?");
     {
@@ -314,6 +317,7 @@ void WindowManagement::imgui()
 
         ImGui::Checkbox("Spatial Partition", &spatial_partition);
         ImGui::Checkbox("Decay Overflow (danger)", &overflow_decay);
+        ImGui::Checkbox("Shrink", &shrink);
 
         ImGui::Text("----------------------------");
 
@@ -351,6 +355,12 @@ void WindowManagement::imgui()
         {
             this->balls_handler->reset_balls();
         }
+
+        string status = "red: " + to_string(balls_handler->red_ball_quantity) +
+                        " green: " + to_string(balls_handler->green_ball_quantity) +
+                        " blue: " + to_string(balls_handler->blue_ball_quantity);
+
+        ImGui::Text(status.c_str());
     }
     ImGui::End();
 }
@@ -468,7 +478,7 @@ void WindowManagement::check_keyboard_pressing()
 
     glm::vec3 front = glm::normalize(glm::vec3(this->camera.direction.x, 0, this->camera.direction.z));
 
-    static float moving_speed = 100.0f;
+    static float moving_speed = 50.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {

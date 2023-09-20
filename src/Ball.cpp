@@ -24,6 +24,20 @@ Ball::Ball(glm::vec3 position, float radius, glm::vec3 speed, TYPE type)
     this->type = type;
 
     this->deleted = false;
+
+    random_device rd;
+    this->rd_generator = mt19937(rd());
+
+    this->turn_clock = 0;
+
+    this->movement = glm::vec3(0.0, 0.0, 0.0);
+
+    this->last_dir = -1;
+    this->turn_dir = false;
+
+    this->state = STATE::SEARCHING;
+
+    this->shrink_clock = 1000;
 }
 
 Ball::~Ball()
@@ -119,6 +133,9 @@ vector<bool> Ball::check_boundary_collision(float decay)
 bool Ball::check_ball_collision(Ball &ball, float decay)
 {
     bool ret = false;
+
+    if(this->type == ball.type)
+        return ret;
 
     if(glm::distance(this->position, ball.position) <= ball.radius + this->radius)
     {
@@ -255,8 +272,25 @@ bool Ball::check_cube_collision(Cube &cube, float decay)
     return ret;
 }
 
-void Ball::move(vector<Ball> &balls, float decay)
+void Ball::move(vector<Ball> &balls, float decay, vector<vector<vector<glm::vec2>>> &maze_movement, vector<vector<vector<set<int>>>> &regular_grid, bool shrink)
 {
+    if(this->type != TYPE::FOOD && shrink_clock == 0)
+    {
+        if(shrink)
+            this->radius -= 25.0f;
+
+        if(this->radius < 75.0f)
+        {
+            this->deleted = true;
+
+            return;
+        }
+
+        shrink_clock = 1000;
+    }
+    else
+        shrink_clock--;
+
     vector<bool> boundary_collide = check_boundary_collision(decay);
 
     static const glm::vec3 gravity = glm::vec3(0, -3, 0);
@@ -264,15 +298,118 @@ void Ball::move(vector<Ball> &balls, float decay)
     glm::vec3 friction = glm::vec3(0.0f, 0.0f, 0.0f);
 
     if(glm::length(this->speed) > 0)
-        friction = glm::normalize(this->speed) * -0.05f;
+        friction = glm::normalize(this->speed) * -0.15f;
 
     this->acceleration = glm::vec3(0, 0, 0);
+
+    float speed = 0.5;
+
+    if(this->type == TYPE::RANDOM)
+    {
+        if(turn_clock == 0)
+        {
+            uniform_real_distribution<float> unif(-speed, speed);
+            uniform_int_distribution<int> unif_clock(500, 1000);
+
+            this->movement.x = unif(rd_generator);
+            this->movement.z = unif(rd_generator);
+
+            turn_clock = unif_clock(rd_generator);
+        }
+        else
+            turn_clock--;
+    }
+    else if(this->type == TYPE::AI)
+    {
+        glm::vec2 maze_position = glm::ivec2((position.x + 4000) / 500, (position.z + 4000) / 500);
+        vector<glm::vec2> avail_maze = maze_movement[maze_position.x][maze_position.y];
+        glm::vec3 target_position;
+
+        this->state = STATE::SEARCHING;
+
+        for(int i = 0 ; i < avail_maze.size() ; i++)
+        {
+            for(auto ball: regular_grid[avail_maze[i].x + 1][grid_position.y][avail_maze[i].y + 1])
+            {
+                if( state == STATE::SEARCHING && balls[ball].type == TYPE::FOOD )
+                {
+                    state = STATE::EAT;
+
+                    target_position = balls[ball].position;
+
+                    turn_clock = 0;
+                }
+
+                if( balls[ball].type == TYPE::RANDOM )
+                {
+                    if(this->radius > balls[ball].radius)
+                    {
+                        state = STATE::ATTACK;
+
+                        target_position = balls[ball].position;
+
+                        turn_clock = 0;
+                    }
+                    else
+                    {
+                        state = STATE::DODGE;
+
+                        target_position = this->position * 2.0f - balls[ball].position;
+
+                        turn_clock = 0;
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        if(this->state == STATE::SEARCHING)
+        {
+            if(turn_clock == 0)
+            {
+                if(avail_maze.size() > 0)
+                {
+                    uniform_int_distribution<int> unif_target(0, avail_maze.size() - 1);
+
+                    int target = unif_target(rd_generator);
+
+                    target_w = avail_maze[target].x;
+                    target_h = avail_maze[target].y;
+
+                }
+
+                target_position = glm::vec3(target_w * 500 - 4000 + 250, 0.0, target_h * 500 - 4000 + 250);
+
+                turn_clock = 250;
+            }
+            else
+                turn_clock--;
+
+            // if(turn_clock == 0)
+            // {
+            //     uniform_real_distribution<float> unif(-speed, speed);
+            //     uniform_int_distribution<int> unif_clock(500, 1000);
+
+            //     this->movement.x = unif(rd_generator);
+            //     this->movement.z = unif(rd_generator);
+
+            //     turn_clock = unif_clock(rd_generator);
+            // }
+            // else
+            //     turn_clock--;
+        }
+
+        this->movement = glm::normalize(target_position - position) * speed;
+    }
+
+    this->acceleration += this->movement;
 
     // if(boundary_collide[4] == false)
     // {
         this->acceleration += gravity;
 
-        // this->acceleration += friction;
+        this->acceleration += friction;
     // }
 
     this->speed += this->acceleration;

@@ -4,6 +4,7 @@
 #include <limits>
 #include <map>
 #include <vector>
+#include <random>
 #include <set>
 
 #include <glm/glm.hpp>
@@ -15,6 +16,11 @@
 
 using namespace std;
 
+enum STATE
+{
+    SEARCHING, EAT, ATTACK, DODGE
+};
+
 class Ball
 {
     public:
@@ -22,7 +28,7 @@ class Ball
         ~Ball();
 
         void draw(Shader, unsigned int, glm::vec3, float, float, float, float);
-        void move(vector<Ball>&, float);
+        void move(vector<Ball>&, float, vector<vector<vector<glm::vec2>>> &maze_movement, vector<vector<vector<set<int>>>> &regular_grid, bool shrink);
 
         vector<bool> check_boundary_collision(float);
         bool check_ball_collision(Ball &, float);
@@ -52,5 +58,18 @@ class Ball
 
         TYPE type;
 
+        int shrink_clock;
+
         bool deleted;
+
+        mt19937 rd_generator;
+
+        int turn_clock;
+        glm::vec3 movement;
+
+        int last_dir;
+        bool turn_dir;
+        int target_w, target_h;
+
+        STATE state;
 };

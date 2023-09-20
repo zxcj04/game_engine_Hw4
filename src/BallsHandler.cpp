@@ -56,11 +56,8 @@ void create_maze(vector<vector<int>> &maze, int x, int y, int height, int width)
     }
 }
 
-vector<vector<int>> generate_maze(float boundary_size, float cube_size)
+vector<vector<int>> generate_maze(float width, float height)
 {
-    int width = boundary_size / cube_size;
-    int height = boundary_size / cube_size;
-
     vector<vector<int>> maze;
 
     maze.assign(width, vector<int>(height, 0));
@@ -87,7 +84,11 @@ BallsHandler::BallsHandler(float boundary_size)
     regular_grid = vector<vector<vector<set<int>>>>(boundary_size/gap + 2, vector<vector<set<int>>>(boundary_size/gap + 2, vector<set<int>>(boundary_size/gap + 2, set<int>())));
     cube_regular_grid = vector<vector<vector<set<int>>>>(boundary_size/gap + 2, vector<vector<set<int>>>(boundary_size/gap + 2, vector<set<int>>(boundary_size/gap + 2, set<int>())));
 
-    this->maze = generate_maze(boundary_size, 500.0f);
+    this->maze_width = boundary_size / 500.0f;
+    this->maze_height = boundary_size / 500.0f;
+
+    this->maze = generate_maze(maze_width, maze_height);
+    calc_movement();
 
     float gap = 500.0f;
 
@@ -163,7 +164,110 @@ void BallsHandler::draw_balls(Shader shader, unsigned int texture_ball, glm::vec
     }
 }
 
-void BallsHandler::move_balls(float decay, bool spatial_partition)
+int can_move(vector<vector<int>> &maze, int maze_width, int maze_height, int x, int y, int direction, int times)
+{
+    switch(direction)
+    {
+        case 0:
+            y -= 1;
+            break;
+        case 1:
+            y += 1;
+            break;
+        case 2:
+            x += 1;
+            break;
+        case 3:
+            x -= 1;
+            break;
+    }
+
+    if(x < 0 || x > maze_width - 1 ||
+       y < 0 || y > maze_height - 1)
+        return 0;
+
+    if(maze[x][y] != 1)
+        return 0;
+
+    if(times == 0)
+        return 1;
+
+    int ret = 0;
+
+    if(direction != 0)
+        ret = max(ret, can_move(maze, maze_width, maze_height, x, y, 0, times - 1));
+    if(direction != 1)
+        ret = max(ret, can_move(maze, maze_width, maze_height, x, y, 1, times - 1));
+    if(direction != 2)
+        ret = max(ret, can_move(maze, maze_width, maze_height, x, y, 2, times - 1));
+    if(direction != 3)
+        ret = max(ret, can_move(maze, maze_width, maze_height, x, y, 3, times - 1));
+
+    return ret + times;
+}
+
+bool can_see(vector<vector<int>> &maze, glm::ivec2 grid_position, glm::ivec2 grid_target)
+{
+    if(grid_position.x != grid_target.x && grid_position.y != grid_target.y)
+        return false;
+
+    if(grid_position.x == grid_target.x)
+    {
+        int start = min(grid_position.y, grid_target.y);
+        int end = max(grid_position.y, grid_target.y);
+
+        int x = grid_position.x;
+
+        for(int i = start ; i <= end ; i++)
+            if(maze[x][i] < 1)
+                return false;
+    }
+    else
+    {
+        int start = min(grid_position.x, grid_target.x);
+        int end = max(grid_position.x, grid_target.x);
+
+        int y = grid_position.y;
+
+        for(int i = start ; i <= end ; i++)
+            if(maze[i][y] < 1)
+                return false;
+    }
+
+    return true;
+}
+
+void BallsHandler::calc_movement()
+{
+    maze_movement.clear();
+
+    maze_movement.assign(maze_width, vector<vector<glm::vec2>>(maze_height, vector<glm::vec2>()));
+
+    for(size_t w = 0 ; w < maze.size() ; w++)
+    {
+        for(size_t h = 0 ; h < maze[w].size() ; h++)
+        {
+            glm::vec2 now = glm::ivec2(w, h);
+
+            for(size_t tw = 0 ; tw < maze.size() ; tw++)
+            {
+                for(size_t th = 0 ; th < maze[tw].size() ; th++)
+                {
+                    glm::vec2 target = glm::ivec2(tw, th);
+
+                    bool see = can_see(maze, now, target);
+
+                    if(see)
+                    {
+                        maze_movement[w][h].push_back(target);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void BallsHandler::move_balls(float decay, bool spatial_partition, bool shrink)
 {
     vector<int> del;
 
@@ -288,6 +392,10 @@ void BallsHandler::move_balls(float decay, bool spatial_partition)
         _balls[to_delete].deleted = true;
     }
 
+    red_ball_quantity = 0;
+    green_ball_quantity = 0;
+    blue_ball_quantity = 0;
+
     for(auto & ball: _balls)
     {
         if(ball.deleted)
@@ -296,7 +404,14 @@ void BallsHandler::move_balls(float decay, bool spatial_partition)
         if(spatial_partition)
             ball.update_regular_grid(regular_grid, gap);
 
-        ball.move(_balls, decay);
+        if(ball.type == TYPE::RANDOM)
+            red_ball_quantity++;
+        else if(ball.type == TYPE::AI)
+            green_ball_quantity++;
+        else if(ball.type == TYPE::FOOD)
+            blue_ball_quantity++;
+
+        ball.move(_balls, decay, maze_movement, regular_grid, shrink);
     }
 
     for(auto & cube: _cubes)
@@ -340,7 +455,8 @@ void BallsHandler::reset_cubes(float boundary_size)
     //     add_cube(boundary_size);
     // }
 
-    this->maze = generate_maze(boundary_size, 500.0f);
+    this->maze = generate_maze(maze_width, maze_height);
+    calc_movement();
 
     float gap = 500.0f;
 
@@ -355,4 +471,47 @@ void BallsHandler::draw_cubes(Shader shader, unsigned int texture_cube, bool sho
     if(show)
     for(auto & cube: _cubes)
         cube.draw(shader, texture_cube);
+}
+
+void BallsHandler::add_food()
+{
+    static int food_clock = 50;
+
+    if(food_clock == 0)
+    {
+        for(int i = 0 ; i < 2 ; i++)
+        {
+                float boundary_size = 8000.0f;
+
+                uniform_real_distribution<float> unif_position(-boundary_size / 2, boundary_size / 2);
+                uniform_real_distribution<float> unif_radius(50, 175);
+                uniform_real_distribution<float> unif_speed(-50, 50);
+
+                float radius = 75.0f;
+
+                TYPE type = TYPE::FOOD;
+
+                glm::vec3 position;
+                glm::vec3 speed;
+
+                do
+                {
+                    position.x = unif_position(rd_generator);
+                    position.y = radius;
+                    position.z = unif_position(rd_generator);
+
+                } while (abs(position.x) + radius >= boundary_size / 2 ||
+                        abs(position.y) + radius >= boundary_size / 2 ||
+                        abs(position.z) + radius >= boundary_size / 2 ||
+                        this->maze[(position.x + boundary_size / 2) / 500][(position.z + boundary_size / 2) / 500] != 1);
+
+                speed = glm::vec3( 0, 0, 0 );
+
+                add_ball(position, radius, speed, type);
+        }
+
+        food_clock = 50;
+    }
+    else
+        food_clock--;
 }

@@ -115,5 +115,7 @@ class WindowManagement
 
         bool only_first;
 
+        bool shrink;
+
         BallsHandler *balls_handler;
 };

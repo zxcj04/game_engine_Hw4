@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <ctime>
 
 #include <WindowManagement.hpp>
 
@@ -8,6 +9,8 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+    srand((unsigned int) time(NULL));
+
     WindowManagement* window_management = new WindowManagement();
 
     bool err = !window_management -> init("Cull & Collision");
